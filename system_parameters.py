@@ -9,14 +9,14 @@ Modify this class to change the parameters for training and datasets options
 MASTER_PORT: int = 15672
 MASTER_MODEL_PARAMETER_QUEUE: str = 'parameters'
 MASTER_MODEL_PERFORMANCE_QUEUE: str = 'results'
-MASTER_HOST_URL: str = '192.168.1.84'
-MASTER_USER: str = 'ManyAlex'
-MASTER_PASSWORD: str = 'maestro'
+MASTER_HOST_URL: str = 'localhost'
+MASTER_USER: str = 'guest'
+MASTER_PASSWORD: str = 'guest'
 MASTER_VIRTUAL_HOST: str = '/'
 
 MASTER_CONNECTION = [MASTER_PORT, MASTER_MODEL_PARAMETER_QUEUE, MASTER_MODEL_PERFORMANCE_QUEUE, MASTER_HOST_URL, MASTER_USER, MASTER_PASSWORD, MASTER_VIRTUAL_HOST]
 #For each connection, it counts like it's an slave.
-SLAVES_CONNECTIONS = [[5672, 'parameters', 'results', 'localhost', 'guest', 'guest', '/'],[5672, 'parameters', 'results', 'localhost', 'guest', 'guest', '/']]
+SLAVES_CONNECTIONS = [[15672, 'parameters', 'results', 'localhost', 'guest', 'guest', '/'],[15672, 'parameters', 'results', 'localhost', 'guest', 'guest', '/']]
 
 
 #Dataset parameters
