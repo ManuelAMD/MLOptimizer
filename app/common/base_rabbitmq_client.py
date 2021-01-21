@@ -88,6 +88,8 @@ class BaseRabbitMQClient:
 		await queue.consume(callback, no_ack=False)
 
 	async def _create_connection(self) -> aio_pika.RobustConnection:
+		return await aio_pika.connect_robust("amqp://{}:{}@{}/".format(self.user, self.password, self.host_url), loop=self.loop)
+		"""
 		return await aio_pika.connect(
 			host = self.host_url,
 			port = self.port,
@@ -95,4 +97,4 @@ class BaseRabbitMQClient:
 			login = self.user,
 			password = self.password,
 			loop = self.loop,
-		)
+		)"""

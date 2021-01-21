@@ -126,7 +126,7 @@ class ImageModelSearchSpace(SearchSpace):
 class RegressionModelSearchSpace(SearchSpace):
     BASE_ARCHITECTURE: tuple = field(default=('mlp'), hash=False)
     CLASSIFIER_LAYERS_N_MIN: int = 1
-    CLASSIFIER_LAYERS_N_MAX: int = 16
+    CLASSIFIER_LAYERS_N_MAX: int = 10
     CLASSIFIER_LAYERS_BASE_MULTIPLIER: int = 16
     CLASSIFIER_LAYERS_UNITS_MIN: int = 1
     CLASSIFIER_LAYERS_UNITS_MAX: int = 32
@@ -145,7 +145,7 @@ class TimeSeriesModelSearchSpace(SearchSpace):
     BASE_ARCHITECTURE: tuple = field(default=('lstm', 'mlp'), hash=False)
     #LSTM architecture
     LSTM_LAYERS_N_MIN: int = 1
-    LSTM_LAYERS_N_MAX: int = 8
+    LSTM_LAYERS_N_MAX: int = 6
     LSTM_LAYERS_BASE_MULTIPLIER: int = 16
     LSTM_LAYERS_UNITS_MIN: int = 1
     LSTM_LAYERS_UNITS_MAX: int = 32
@@ -153,7 +153,7 @@ class TimeSeriesModelSearchSpace(SearchSpace):
     #MLP based model search space
     CLASSIFIER_LAYER: tuple = field(default=('mlp','gap'), hash=False)
     CLASSIFIER_LAYERS_N_MIN: int = 1
-    CLASSIFIER_LAYERS_N_MAX: int = 16
+    CLASSIFIER_LAYERS_N_MAX: int = 10
     CLASSIFIER_LAYERS_BASE_MULTIPLIER: int = 16
     CLASSIFIER_LAYERS_UNITS_MIN: int = 1
     CLASSIFIER_LAYERS_UNITS_MAX: int = 32

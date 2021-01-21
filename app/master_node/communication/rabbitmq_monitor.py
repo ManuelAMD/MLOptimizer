@@ -20,7 +20,8 @@ class RabbitMQMonitor(object):
 			if self.cp.host_url == 'localhost':
 				url = 'http://localhost:15672/api/queues/%2F/parameters'
 			else:
-				url = "https://{}/api/queues/{}/{}".format(self.cp.host_url, self.cp.vitual_host, self.cp.model_parameter_queue)
+				#http://192.168.1.84:15672/api/queues/%2F/parameters
+				url = "http://{}:{}/api/queues/%2F/{}".format(self.cp.host_url, self.cp.port, self.cp.model_parameter_queue)
 			print(url)
 			async with session.get(url) as resp:
 				print(resp.status)

@@ -5,7 +5,7 @@ numpy>=1.19.4
 pandas>=1.2.0
 aio-pika>=6.7.1
 aiohttp>=3.7.3
-optuna>=2.3.0
+optuna==2.3.0
 dataclasses-json>=0.5.2
 scikit-learn>=0.24.0
 keras>=2.4.3
