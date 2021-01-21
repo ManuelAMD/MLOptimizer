@@ -1,2 +1,3 @@
-# sample-data-repo
+# Machine Learning optimizer
 
+This is a project that is capable of generating automatly model for image clasiffication, regression simple output and multiple output, and time series problems
