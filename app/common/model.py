@@ -10,7 +10,9 @@ from app.common.inception_module import InceptionV1ModuleBN
 from app.common.search_space import *
 from app.common.dataset import Dataset
 from app.common.model_communication import *
-from system_parameters import *
+from system_parameters import SystemParameters as SP
+#physical_devices = tf.config.list_physical_devices('GPU')
+#tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 class Model:
 	def __init__(self, model_training_request: ModelTrainingRequest, dataset: Dataset):
@@ -34,7 +36,7 @@ class Model:
 			return self.build_time_series_model(self.model_params, input_shape, class_count)
 
 	def build_and_train_cpu(self):
-		print("Training with CPU")
+		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': "Training with CPU"})
 		try:
 			strategy = tf.distribute.OneDeviceStrategy(device='/cpu:0')
 			with strategy.scope():
@@ -81,7 +83,8 @@ class Model:
 		tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
 		callbacks = [early_stopping, tensorboard, scheduler_callback]
 		total_weights = np.sum([np.prod(v.get_shape().as_list()) for v in model.variables])
-		print('Total weights:', str(total_weights))
+		cad = 'Total weights ' + str(total_weights)
+		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': cad})
 		history = model.fit(
 			train,
 			epochs=self.epochs,
@@ -93,10 +96,11 @@ class Model:
 		did_finish_epochs = self._did_finish_epochs(history, self.epochs)
 		if self.search_space_type == SearchSpaceType.IMAGE:
 			loss, training_val = model.evaluate(test, verbose=0)
-			print("Model accuracy:", training_val)
+			cad = 'Model accuracy ' + str(training_val)
 		else:
 			training_val = model.evaluate(test, verbose=0)
-			print("Model loss:", training_val)
+			cad = 'Model accuracy ' + str(training_val)
+		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': cad})
 		tf.keras.backend.clear_session()
 		return training_val, did_finish_epochs
 
@@ -122,7 +126,7 @@ class Model:
 
 	def _add_cnn_architecture(self, model: keras.Model, model_parameters = ImageModelArchitectureParameters, activation='relu', padding='same', kernel_initializer='he_uniform'):
 		cnn_layers_per_block = model_parameters.cnn_blocks_conv_layers_n
-		weight_decay = WEIGHT_DECAY
+		weight_decay = SP.WEIGHT_DECAY
 		for n in range(0, model_parameters.cnn_blocks_n):
 			filters = model_parameters.cnn_block_conv_filters[n]
 			filter_size = model_parameters.cnn_block_conv_filter_sizes[n]
@@ -186,20 +190,20 @@ class Model:
 		model = keras.Sequential()
 		model.add(keras.layers.Input(input_shape))
 		if model_parameters.base_architecture == 'cnn':
-			self._add_cnn_architecture(model, model_parameters, LAYERS_ACTIVATION_FUNCTION, PADDING, KERNEL_INITIALIZER)
+			self._add_cnn_architecture(model, model_parameters, SP.LAYERS_ACTIVATION_FUNCTION, SP.PADDING, SP.KERNEL_INITIALIZER)
 		elif model_parameters.base_architecture == 'inception':
-			self._add_inception_architecture(model, model_parameters, LAYERS_ACTIVATION_FUNCTION, PADDING)
+			self._add_inception_architecture(model, model_parameters, SP.LAYERS_ACTIVATION_FUNCTION, SP.PADDING)
 
 		if model_parameters.classifier_layer_type == 'gap':
-			model.add(keras.layers.Conv2D(class_count, (1,1), activation=LAYERS_ACTIVATION_FUNCTION, kernel_initializer=KERNEL_INITIALIZER))
+			model.add(keras.layers.Conv2D(class_count, (1,1), activation=SP.LAYERS_ACTIVATION_FUNCTION, kernel_initializer=SP.KERNEL_INITIALIZER))
 			model.add(keras.layers.GlobalAveragePooling2D())
-			model.add(keras.layers.Activation(OUTPUT_ACTIVATION_FUNCTION, dtype=DTYPE))
+			model.add(keras.layers.Activation(SP.OUTPUT_ACTIVATION_FUNCTION, dtype=SP.DTYPE))
 		elif model_parameters.classifier_layer_type == 'mlp':
 			model.add(keras.layers.Flatten())
-			self._add_mlp_architecture(model, model_parameters, class_count, KERNEL_INITIALIZER, LAYERS_ACTIVATION_FUNCTION)
+			self._add_mlp_architecture(model, model_parameters, class_count, SP.KERNEL_INITIALIZER, SP.LAYERS_ACTIVATION_FUNCTION)
 			model.add(keras.layers.Dense(class_count))
-			model.add(keras.layers.Activation(OUTPUT_ACTIVATION_FUNCTION, dtype=DTYPE))
-		model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION, metrics=METRICS)
+			model.add(keras.layers.Activation(SP.OUTPUT_ACTIVATION_FUNCTION, dtype=SP.DTYPE))
+		model.compile(optimizer=SP.OPTIMIZER, loss=SP.LOSS_FUNCTION, metrics=SP.METRICS)
 		elapsed_seconds = int(round(time.time() * 1000)) - start_time
 		print("Model building took", elapsed_seconds, "(miliseconds)")
 		model.summary()
@@ -212,10 +216,10 @@ class Model:
 		model = keras.Sequential()
 		model.add(keras.layers.Input(input_shape))
 		if model_parameters.base_architecture == 'mlp':
-			self._add_mlp_architecture(model, model_parameters, class_count, KERNEL_INITIALIZER, LAYERS_ACTIVATION_FUNCTION)
+			self._add_mlp_architecture(model, model_parameters, class_count, SP.KERNEL_INITIALIZER, SP.LAYERS_ACTIVATION_FUNCTION)
 		model.add(keras.layers.Dense(class_count))
-		model.add(keras.layers.Activation(OUTPUT_ACTIVATION_FUNCTION, dtype=DTYPE))
-		model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION)
+		model.add(keras.layers.Activation(SP.OUTPUT_ACTIVATION_FUNCTION, dtype=SP.DTYPE))
+		model.compile(optimizer=SP.OPTIMIZER, loss=SP.LOSS_FUNCTION)
 		elapsed_seconds = int(round(time.time() * 1000)) - start_time
 		print('Model building took', elapsed_seconds, '(miliseconds)')
 		model.summary()
@@ -227,14 +231,14 @@ class Model:
 		mixed_precision.set_policy(policy)
 		model = keras.Sequential()
 		model.add(keras.layers.Input(input_shape))
-		if model_parameter.base_architecture == 'lstm':
-			self._add_time_series_lstm_architecture(model, model_parameters, class_count, LSTM_ACTIVATION_FUNCTION)
+		if model_parameters.base_architecture == 'lstm':
+			self._add_time_series_lstm_architecture(model, model_parameters, class_count, SP.LSTM_ACTIVATION_FUNCTION)
 		if model_parameters.base_architecture == 'mlp':
-			self._add_mlp_architecture(model, model_parameters, class_count, KERNEL_INITIALIZER, LAYERS_ACTIVATION_FUNCTION)
+			self._add_mlp_architecture(model, model_parameters, class_count, SP.KERNEL_INITIALIZER, SP.LAYERS_ACTIVATION_FUNCTION)
 		#All combination has the same final layers
 		model.add(keras.layers.Dense(class_count))
-		model.add(keras.layers.Activation(OUTPUT_ACTIVATION_FUNCTION, dtype=DTYPE))
-		model.compile(optimizer=OPTIMIZER, loss=LOSS_FUNCTION)
+		model.add(keras.layers.Activation(SP.OUTPUT_ACTIVATION_FUNCTION, dtype=SP.DTYPE))
+		model.compile(optimizer=SP.OPTIMIZER, loss=SP.LOSS_FUNCTION)
 		elapsed_seconds = int(round(time.time() * 1000))- start_time
 		print("Model building took", elapsed_seconds, "(miliseconds)")
 		model.summary()

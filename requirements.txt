@@ -9,3 +9,6 @@ optuna==2.3.0
 dataclasses-json>=0.5.2
 scikit-learn>=0.24.0
 keras>=2.4.3
+flask==1.1.2
+flask-socketio==4.3.2
+gevent==21.1.2

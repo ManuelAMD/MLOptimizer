@@ -4,6 +4,7 @@ from dataclasses import astuple
 import aio_pika
 from aio_pika import IncomingMessage
 from app.common.rabbit_connection_params import RabbitConnectionParams
+from app.common.socketCommunication import *
 
 #Base class for RabbitMQ opertaions
 
@@ -29,11 +30,11 @@ class BaseRabbitMQClient:
 		connection: aio_pika.RobustConnection = await self._create_connection()
 		async with connection:
 			channel = await connection.channel()
-			print("Initializing queues...")
+			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Initializing queues...'})
 			await channel.declare_queue(self.model_parameter_queue, durable=True)
 			await channel.declare_queue(self.model_performance_queue, durable=True)
 			await asyncio.sleep(3)
-			print("Queues declared!")
+			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Queues declared!'})
 
 	async def publish(self, queue_name: str, message_body: dict, auto_close_connection=True)->aio_pika.Connection:
 		connection = await self._create_connection()
