@@ -20,20 +20,20 @@ SLAVES_CONNECTIONS = [[15672, 'parameters', 'results', 'localhost', 'guest', 'gu
 """
 class SystemParameters:
     #Rabbit MQ Connections
-    """INSTANCE_PORT: int = 15672
+    INSTANCE_PORT: int = 15672
     INSTANCE_MODEL_PARAMETER_QUEUE: str = 'parameters'
     INSTANCE_MODEL_PERFORMANCE_QUEUE: str = 'results'
     INSTANCE_HOST_URL: str = 'localhost'
     INSTANCE_USER: str = 'guest'
     INSTANCE_PASSWORD: str = 'guest'
-    INSTANCE_VIRTUAL_HOST: str = '/'"""
-    INSTANCE_PORT: int = 15672
+    INSTANCE_VIRTUAL_HOST: str = '/'
+    """INSTANCE_PORT: int = 15672
     INSTANCE_MODEL_PARAMETER_QUEUE: str = 'parameters'
     INSTANCE_MODEL_PERFORMANCE_QUEUE: str = 'results'
     INSTANCE_HOST_URL: str = '189.186.75.55'
     INSTANCE_USER: str = 'invitado'
     INSTANCE_PASSWORD: str = 'mcc2021'
-    INSTANCE_VIRTUAL_HOST: str = '/'
+    INSTANCE_VIRTUAL_HOST: str = '/'"""
 
     INSTANCE_CONNECTION = [INSTANCE_PORT, INSTANCE_MODEL_PARAMETER_QUEUE, INSTANCE_MODEL_PERFORMANCE_QUEUE, INSTANCE_HOST_URL, INSTANCE_USER, INSTANCE_PASSWORD, INSTANCE_VIRTUAL_HOST]
 
