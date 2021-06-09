@@ -9,3 +9,6 @@ class SlaveRabbitMQClient(BaseRabbitMQClient):
 
 	async def listen_for_model_params(self, callback) -> aio_pika.Connection:
 		return await super().listen(self.model_parameter_queue, callback, auto_close_connection=False)
+
+	async def listen_for_model_params_pika(self, callback):
+		return await super().listen_pika(self.model_parameter_queue, callback, auto_close_connection=False)

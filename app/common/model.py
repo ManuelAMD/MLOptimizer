@@ -1,9 +1,11 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 import time
 import logging
+import os
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
+from tensorflow.keras.utils import plot_model
 from tensorflow.keras import layers, regularizers
 from tensorflow.keras.mixed_precision import experimental as mixed_precision
 from app.common.inception_module import InceptionV1ModuleBN
@@ -11,11 +13,15 @@ from app.common.search_space import *
 from app.common.dataset import Dataset
 from app.common.model_communication import *
 from system_parameters import SystemParameters as SP
+from app.common.Callbacks import EndEpoch
 #physical_devices = tf.config.list_physical_devices('GPU')
 #tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 class Model:
-	def __init__(self, model_training_request: ModelTrainingRequest, dataset: Dataset):
+	def __init__(self, model_training_request: ModelTrainingRequest, dataset: Dataset, socket = None):
+		if socket != None:
+			SocketCommunication.isSocket = socket.isSocket
+		
 		self.id = model_training_request.id
 		self.experiment_id = model_training_request.experiment_id
 		self.training_type = model_training_request.training_type
@@ -35,16 +41,28 @@ class Model:
 		elif self.search_space_type == SearchSpaceType.TIME_SERIES:
 			return self.build_time_series_model(self.model_params, input_shape, class_count)
 
-	def build_and_train_cpu(self):
+	def remove_img(self, path):
+		if os.path.exists(path):
+			os.remove(path)
+			return True
+		return False
+
+	def create_model_image(self, route):
+		model = self.build_model(self.dataset.get_input_shape(), self.dataset.get_classes_count())
+		self.remove_img(route)
+		plot_model(model, to_file=route, show_shapes=True, show_layer_names=False)
+
+	def build_and_train_cpu(self, save_path=None):
 		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': "Training with CPU"})
 		try:
 			strategy = tf.distribute.OneDeviceStrategy(device='/cpu:0')
 			with strategy.scope():
-				self.build_and_train()
+				self.build_and_train(save_path)
 		except ValueError as e:
 			logging.warning(e)
 
-	def build_and_train(self) -> float:
+	def build_and_train(self, save_path=None) -> float:
+		print("Status socket: ", SocketCommunication.isSocket)
 		if self.search_space_type == SearchSpaceType.IMAGE:
 			use_augmentation = not self.is_partial_training
 		else:
@@ -81,10 +99,17 @@ class Model:
 		model_stage = "exp" if self.is_partial_training else "hof"
 		log_dir = "logs/{}/{}-{}".format(self.experiment_id, model_stage, str(self.id))
 		tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-		callbacks = [early_stopping, tensorboard, scheduler_callback]
+		end_callback = EndEpoch()
+		callbacks = [early_stopping, tensorboard, scheduler_callback, end_callback]
 		total_weights = np.sum([np.prod(v.get_shape().as_list()) for v in model.variables])
 		cad = 'Total weights ' + str(total_weights)
 		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': cad})
+		self.remove_img(save_path)
+		if save_path != None:
+			print("Saving model at:", SP.DATA_ROUTE+save_path)
+			plot_model(model, to_file=SP.DATA_ROUTE+save_path+".png", show_shapes=True, show_layer_names=False)
+		else:
+			print("The model can't be saved")
 		history = model.fit(
 			train,
 			epochs=self.epochs,

@@ -4,6 +4,7 @@ import concurrent
 import logging
 from dataclasses import asdict
 import aio_pika
+import pika
 from app.common.model import Model
 from app.common.model_communication import *
 from app.common.rabbit_connection_params import RabbitConnectionParams
@@ -14,9 +15,12 @@ from system_parameters import SystemParameters as SP
 
 class TrainingSlave:
 
-	def __init__(self, dataset: Dataset, model_architecture_factory: ModelArchitectureFactory):
-		#asyncio.set_event_loop(asyncio.new_event_loop())
-		self.loop = asyncio.get_event_loop()
+	def __init__(self, dataset: Dataset, model_architecture_factory: ModelArchitectureFactory, loop = None):
+		if loop == None:
+			asyncio.set_event_loop(asyncio.new_event_loop())
+			self.loop = asyncio.get_event_loop()
+		else:
+			self.loop = loop
 		self.dataset = dataset
 		rabbit_connection_params = RabbitConnectionParams.new()
 		self.rabbitmq_client = SlaveRabbitMQClient(rabbit_connection_params, self.loop)
@@ -33,7 +37,6 @@ class TrainingSlave:
 		#asyncio.new_event_loop(self._start_listening())
 		#await connection = self._start_listening()
 		connection = self.loop.run_until_complete(self._start_listening())
-		print("Stop listening")
 		try:
 			self.loop.run_forever()
 		finally:
@@ -49,27 +52,19 @@ class TrainingSlave:
 
 	@staticmethod
 	def train_model(info_dict: dict) -> float:
-		"""if SP.DATASET_TYPE == 1:
-			dataset = ImageClassificationBenchmarkDataset(SP.DATASET_NAME, SP.DATASET_SHAPE, SP.DATASET_CLASSES, SP.DATASET_BATCH_SIZE, SP.DATASET_VALIDATION_SPLIT)
-		elif SP.DATASET_TYPE == 2:
-			dataset = RegressionBenchmarkDataset(SP.DATASET_NAME, SP.DATASET_SHAPE, SP.DATASET_FEATURES, SP.DATASET_LABELS, SP.DATASET_BATCH_SIZE, SP.DATASET_VALIDATION_SPLIT)
-		elif SP.DATASET_TYPE == 3:
-			dataset = TimeSeriesBenchmarkDataset(SP.DATASET_NAME, SP.DATASET_WINDOW_SIZE, SP.DATASET_DATA_SIZE, SP.DATASET_BATCH_SIZE, SP.DATASET_VALIDATION_SPLIT)
-		else:
-			print("Please enter a valid dataset type")
-			return"""
 		dataset = info_dict['dataset']
+		print(dataset)
 		model_training_request = info_dict['model_request']
-		dataset.load()
+		dataset.load(info_dict['init_route'])
 		model = Model(model_training_request, dataset)
 		if SP.TRAIN_GPU:
-			return model.build_and_train()
+			return model.build_and_train(info_dict['model_img'])
 		else:
-			return model.build_and_train_cpu()
+			return model.build_and_train_cpu(info_dict['model_img'])
 
-	async def _start_listening(self) -> aio_pika.Connection:
+	async def _start_listening(self):
 		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': "Worker started!"})
-		return await self.rabbitmq_client.listen_for_model_params(self._on_model_params_received)
+		return await self.rabbitmq_client.listen_for_model_params_pika(self._on_model_params_received)
 
 	async def _on_model_params_received(self, model_params):
 		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': "Received model training request"})
@@ -78,13 +73,19 @@ class TrainingSlave:
 		model_training_request = ModelTrainingRequest.from_dict(model_params, self.model_type)
 		if not self.search_space_hash == model_training_request.search_space_hash:
 			raise Exception("Search space of master is different to this worker's search space")
+		SocketCommunication.decide_print_form(MSGType.RECIEVED_MODEL, {'node':2, 'msg':' New model recieved', 'epochs':model_training_request.epochs})
 		info_dict = {
+			'model_img': SP.MODEL_IMG,
+			'init_route': SP.DATA_ROUTE,
 			'dataset': self.dataset,
-			'model_request': model_training_request
+			'model_request': model_training_request,
+			'isSocket': SocketCommunication.isSocket
 		}
-		with concurrent.futures.ProcessPoolExecutor() as pool:
-			training_val, did_finish_epochs = await self.loop.run_in_executor(pool, self.train_model, info_dict)
-		#training_val, did_finish_epochs = self.train_model(model_training_request)
+		if SocketCommunication.isSocket:
+			training_val, did_finish_epochs = self.train_model(info_dict)
+		else:
+			with concurrent.futures.ProcessPoolExecutor() as pool:
+				training_val, did_finish_epochs = await self.loop.run_in_executor(pool, self.train_model, info_dict)
 		model_training_response = ModelTrainingResponse(id=model_training_request.id, performance=training_val, finished_epochs=did_finish_epochs)
 		await self._send_performance_to_broker(model_training_response)
 

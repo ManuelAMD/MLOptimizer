@@ -2,6 +2,7 @@ import datetime
 from enum import Enum
 from typing import List
 import optuna
+from app.common.model import Model
 from optuna.samplers import TPESampler
 from optuna.structs import TrialState
 from app.common.model_communication import *
@@ -133,12 +134,19 @@ class OptimizationStrategy(object):
 	def is_finished(self):
 		return not self._should_wait_exploration() and not self._should_wait_hof()
 
-	def get_best_model(self):
-		#If the value of the model is the max.
-		if self.search_space_type == SearchSpaceType.IMAGE:
-			return self.get_best_classification_model()
-		#If the value of the model is the min.
-		return self.get_best_regression_model()
+	def get_best_model(self, action=None):
+		if self.phase == Phase.DEEP_TRAINING and action != Action.START_NEW_PHASE:
+			#If the value of the model is the max.
+			if self.search_space_type == SearchSpaceType.IMAGE:
+				return self.get_best_classification_model()
+			#If the value of the model is the min.
+			return self.get_best_regression_model()
+		else:
+			#If the value of the model is the max.
+			if self.search_space_type == SearchSpaceType.IMAGE:
+				return self.get_best_exploration_classification_model()
+			#If the value of the model is the min.
+			return self.get_best_exploration_regression_model()
 
 	def get_best_classification_model(self):
 		best_model = max(self.deep_training_models_completed, key=lambda completed_model: completed_model.performance_2)
@@ -212,6 +220,7 @@ class OptimizationStrategy(object):
 		self.storage.set_trial_state(model_training_response.id, TrialState.COMPLETE)
 		self._register_completed_model(model_training_response)
 		best_trial = self.get_best_exploration_classification_model()
+		self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best exploration trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
@@ -233,6 +242,7 @@ class OptimizationStrategy(object):
 		completed_model.performance_2 = model_training_response.performance
 		self.deep_training_models_completed.append(completed_model)
 		best_trial = self.get_best_classification_model()
+		self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best HoF trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance_2)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
@@ -248,6 +258,7 @@ class OptimizationStrategy(object):
 		self.storage.set_trial_state(model_training_response.id, TrialState.COMPLETE)
 		self._register_completed_model(model_training_response)
 		best_trial = self.get_best_exploration_regression_model()
+		self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best exploration trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
@@ -269,6 +280,7 @@ class OptimizationStrategy(object):
 		completed_model.performance_2 = model_training_response.performance
 		self.deep_training_models_completed.append(completed_model)
 		best_trial = self.get_best_regression_model()
+		self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best HoF trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance_2)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
@@ -278,6 +290,9 @@ class OptimizationStrategy(object):
 		elif (not self._should_generate_hof() and not self._should_wait_hof()):
 			return Action.FINISH
 
+	def create_image_model(self, best, name):
+		model = Model(best.model_training_request, self.dataset)
+		model.create_model_image(name)
 
 class Phase(Enum):
 	EXPLORATION = 1

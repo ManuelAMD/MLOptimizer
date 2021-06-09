@@ -1,0 +1,18 @@
+{
+	"name":"abalone_original",
+	"version":1.0,
+	"description":"Abalone UCI",
+	"homepage":"https://www.kaggle.com/hurshd0/abalone-uci",
+	"features":{
+		"value":8,
+		"label":1
+	},
+	"total_num_examples":4177,
+	"splits":{
+		"test":836,
+		"train":3341
+	},
+	"supervised_keys":["value", "label"],
+	"citation":"",
+	"redistribution_info":""
+}

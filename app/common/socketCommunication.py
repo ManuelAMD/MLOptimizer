@@ -9,10 +9,12 @@ class MSGType():
 	CHANGE_PHASE = 'changePhase'
 	MASTER_ERROR = 'masterError'
 	FINISHED_TRAINING = 'finishedTrain'
+	END_EPOCH = 'endEpoch'
+	RECIEVED_MODEL = 'recievedModel'
 
 class SocketCommunication:
 	isSocket: bool = False
-	socket: SocketIO
+	socket: SocketIO = None
 
 	@staticmethod	
 	def decide_print_form(msgType: MSGType, info):

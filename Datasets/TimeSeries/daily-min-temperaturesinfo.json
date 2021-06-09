@@ -1,0 +1,18 @@
+{
+	"name":"daily-min-temperatures",
+	"version":1.0,
+	"description":"Minimum daily temperatures over 10 years (1981-1990) in the city Melbourne, Australia.",
+	"homepage":"https://www.kaggle.com/paulbrabban/daily-minimum-temperatures-in-melbourne",
+	"features":{
+		"date":1,
+		"value":1
+	},
+	"total_num_examples":3650,
+	"splits":{
+		"test":730,
+		"train":2920
+	},
+	"supervised_keys":["date", "value"],
+	"citation":"",
+	"redistribution_info":""
+}

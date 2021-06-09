@@ -1,4 +1,5 @@
 from app.common.dataset import *
+import time
 from app.common.search_space import ModelArchitectureFactory, ImageModelArchitectureFactory, RegressionModelArchitectureFactory, TimeSeriesModelArchitectureFactory
 from system_parameters import SystemParameters as SP
 from flask_socketio import SocketIO, send
@@ -9,12 +10,16 @@ class InitNodes:
 	def master_socket(self, socketio: SocketIO):
 		SocketCommunication.socket = socketio
 		SocketCommunication.isSocket = True
+		#Wait a seconds for the UI application
+		time.sleep(3)
 		self.master()
 
-	def slave_socket(self, socketio: SocketIO):
+	def slave_socket(self, socketio: SocketIO, loop=None):
 		SocketCommunication.socket = socketio
 		SocketCommunication.isSocket = True
-		self.slave()
+		#Wait a seconds for the UI application
+		time.sleep(3)
+		self.slave(loop)
 
 	def master(self):
 		model_architecture_factory: ModelArchitectureFactory = self.get_model_architecture()
@@ -25,12 +30,12 @@ class InitNodes:
 		optimization_job = OptimizationJob(dataset, model_architecture_factory)
 		optimization_job.start_optimization(trials=SP.TRIALS)
 
-	def slave(self):
+	def slave(self, loop=None):
 		model_architecture_factory: ModelArchitectureFactory = self.get_model_architecture()
 		dataset: Dataset = self.get_dataset()
 		from app.slave_node.training_slave import TrainingSlave
 		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': 'Initilizating slave node'})
-		training_slave = TrainingSlave(dataset, model_architecture_factory)
+		training_slave = TrainingSlave(dataset, model_architecture_factory, loop)
 		training_slave.start_slave()
 
 	def get_model_architecture(self) -> ModelArchitectureFactory:
@@ -168,3 +173,5 @@ class InitNodes:
 		SP.DATASET_DATA_SIZE = parameters['DatasetParams']['FeatureSize']
 
 		SP.TRAIN_GPU = parameters['TrainGPU']
+		SP.MODEL_IMG = parameters['ImageModel']
+		SP.DATA_ROUTE = parameters['DataRoute']

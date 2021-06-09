@@ -2,6 +2,7 @@ from flask import Flask, request
 from flask_socketio import SocketIO, send
 import threading
 import time
+import asyncio
 from app.init_nodes import InitNodes
 import json
 import sys
@@ -11,10 +12,10 @@ def run_master_node(masterParameters):
     InitNodes.change_system_info(masterParameters)
     initNode.master_socket(socketio)
 
-def run_slave_node(slaveParameters):
+def run_slave_node(slaveParameters, loop=None):
     initNode = InitNodes()
     InitNodes.change_slave_system_parameters(slaveParameters)
-    initNode.slave_socket(socketio)
+    initNode.slave_socket(socketio, loop)
 
 def send_message_to_nodes(cad: str):
     socketio.send(cad, bradcast=True)
@@ -62,7 +63,7 @@ def initSlave(slaveParameters):
     if slave_thread.is_alive():
         return "Another slave is running"
     params = json.loads(slaveParameters)
-    slave_thread = threading.Thread(target=run_slave_node, args=(params,))
+    slave_thread = threading.Thread(target=run_slave_node, args=(params,asyncio.get_event_loop()))
     slave_thread.start()
     return "slave Initialized"
 

@@ -4,6 +4,7 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import json
 import pandas as pd
+import os
 from sklearn import preprocessing
 from app.common.preprocessing import *
 
@@ -142,7 +143,7 @@ class RegressionBenchmarkDataset(Dataset):
 		self.ranges = []
 		self.feature_size = feature_size
 
-	def load(self):
+	def load(self, init_route=None):
 		train_split_float = np.float(1.0 - self.validation_split_float)
 		val_split_percent = int(self.validation_split_float * 100)
 		train_split_percent = int(train_split_float * 100)
@@ -154,7 +155,11 @@ class RegressionBenchmarkDataset(Dataset):
 			self.test = tfds.load(self.dataset_name, as_supervised=True, split='test')
 		except:
 			try:
-				route = '../mloptimizermodelgenerator/Datasets/Regression/'+self.dataset_name
+				if init_route == None:
+					route = '../mloptimizermodelgenerator/Datasets/Regression/' + self.dataset_name
+				else:
+					route = init_route + 'Datasets/Regression/'+ self.dataset_name
+				print(init_route)
 				with open(route+'info.json') as jsonfile:
 					info = json.load(jsonfile)
 				self.train_split_count = int(info['splits']['train']*train_split_float)
@@ -168,7 +173,7 @@ class RegressionBenchmarkDataset(Dataset):
 				self.validation = self.numpy_data_to_tfdataset(self.validation, self.n_labels)
 				self.test = self.numpy_data_to_tfdataset(self.test, self.n_labels)
 			except:
-				#InitNodes.decide_print_form(MSGType.MASTER_ERROR, {'node': 1, 'msg': 'Somethings went wrong trying to load the dataset, please check the parameters and info'})
+				#InitNodes.decide_print_form(MSGType.SLAVE_STATUS, {'node': 1, 'msg': 'Somethings went wrong trying to load the dataset, please check the parameters and info'})
 				print('Somethings went wrong trying to load the Regression dataset, please check the parameters and info')
 				raise
 

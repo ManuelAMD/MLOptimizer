@@ -1,4 +1,5 @@
 from app.init_nodes import InitNodes
 
-slaveNode = InitNodes()
-slaveNode.slave()
+if __name__ == '__main__':
+    slaveNode = InitNodes()
+    slaveNode.slave()

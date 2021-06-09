@@ -1,6 +1,7 @@
 import asyncio
 import json
 from dataclasses import astuple
+import pika
 import aio_pika
 from aio_pika import IncomingMessage
 from app.common.rabbit_connection_params import RabbitConnectionParams
@@ -65,6 +66,26 @@ class BaseRabbitMQClient:
 
 		return connection
 
+	async def listen_pika(self, queue_name: str, callback, auto_close_connection=True):
+		async def on_result_recieved(ch, method, properties, body):
+			body_json = body.decode()
+			body_dict = json.loads(body_json)
+			await callback(body_dict)
+			await message.ack()
+		credentials = pika.PlainCredentials(self.user, self.password)
+		params = pika.ConnectionParameters(self.host_url, credentials=credentials, heartbeat=0)
+		connection = pika.BlockingConnection(params)
+		channel = connection.channel()
+		channel.basic_qos(prefetch_count=1)
+		queue_state = channel.queue_declare(queue=queue_name, durable=True)
+		if not queue_state.method.message_count == 0:
+			method, properties, body = channel.basic_get(queue_name, auto_ack=False)
+			await on_result_recieved(channel, method, properties, body)
+		#await asyncio.sleep(3)
+		#channel.basic_consume(queue_name, on_result_recieved, auto_ack=False)
+		channel.start_consuming()
+		return connection
+	
 	#Static method thar runs a publisher to publish messages in the queues.
 	@staticmethod
 	async def _run_publish(connection, queue_name, message_body_json):
@@ -89,7 +110,7 @@ class BaseRabbitMQClient:
 		await queue.consume(callback, no_ack=False)
 
 	async def _create_connection(self) -> aio_pika.RobustConnection:
-		return await aio_pika.connect_robust("amqp://{}:{}@{}/".format(self.user, self.password, self.host_url), loop=self.loop)
+		return await aio_pika.connect_robust("amqp://{}:{}@{}".format(self.user, self.password, self.host_url))
 		"""
 		return await aio_pika.connect(
 			host = self.host_url,

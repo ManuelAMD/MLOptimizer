@@ -50,10 +50,14 @@ class OptimizationJob:
 	async def on_model_results(self, response: dict):
 		model_training_response = ModelTrainingResponse.from_dict(response)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Received response'})
-		cad = str(model_training_response.id) + '|' + str(model_training_response.performance) + '|' + str(model_training_response.finished_epochs)
+		cad = str(model_training_response.id) + ' | ' + str(model_training_response.performance) + ' | ' + str(model_training_response.finished_epochs)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		action: Action = self.optimization_strategy.report_model_response(model_training_response)
-		SocketCommunication.decide_print_form(MSGType.FINISHED_MODEL, {'node': 1, 'msg': 'Finished a model', 'total': self.optimization_strategy.get_training_total()})
+		best = self.optimization_strategy.get_best_model(action=action)
+		if action==Action.START_NEW_PHASE or  self.optimization_strategy.phase == Phase.EXPLORATION:
+			SocketCommunication.decide_print_form(MSGType.FINISHED_MODEL, {'node': 1, 'msg': 'Finished a model', 'total': self.optimization_strategy.get_training_total(), 'best_id':best.model_training_request.id,'performance':best.performance})
+		else:
+			SocketCommunication.decide_print_form(MSGType.FINISHED_MODEL, {'node': 1, 'msg': 'Finished a model', 'total': self.optimization_strategy.get_training_total(), 'best_id':best.model_training_request.id,'performance':best.performance_2})
 		if action == Action.GENERATE_MODEL:
 			await self.generate_model()
 		elif action == Action.WAIT:

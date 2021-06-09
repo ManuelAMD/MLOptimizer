@@ -37,6 +37,8 @@ class SystemParameters:
 
     INSTANCE_CONNECTION = [INSTANCE_PORT, INSTANCE_MODEL_PARAMETER_QUEUE, INSTANCE_MODEL_PERFORMANCE_QUEUE, INSTANCE_HOST_URL, INSTANCE_USER, INSTANCE_PASSWORD, INSTANCE_VIRTUAL_HOST]
 
+    MODEL_IMG: str = None
+    DATA_ROUTE: str = None
 
     #Dataset parameters
     #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans
@@ -63,8 +65,8 @@ class SystemParameters:
     TRAIN_GPU: bool = True
     TRIALS = 10
     #Exploration parameters 
-    EXPLORATION_SIZE: int = 10
-    EXPLORATION_EPOCHS: int = 10
+    EXPLORATION_SIZE: int = 5
+    EXPLORATION_EPOCHS: int = 5
     EXPLORATION_EARLY_STOPPING_PATIENCE: int = 3
     #Hall of fame parameters
     HALL_OF_FAME_SIZE: int = 3
