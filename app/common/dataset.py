@@ -4,13 +4,14 @@ import tensorflow as tf
 import tensorflow_datasets as tfds
 import json
 import pandas as pd
+import os
 from sklearn import preprocessing
 from app.common.preprocessing import *
 
 #Abstract class
 class Dataset (abc.ABC):
 	@abc.abstractmethod
-	def load():
+	def load(self):
 		pass
 
 	@abc.abstractclassmethod
@@ -26,15 +27,15 @@ class Dataset (abc.ABC):
 		pass
 
 	@abc.abstractclassmethod
-	def get_training_steps() -> int:
+	def get_training_steps(self) -> int:
 		pass
 
 	@abc.abstractclassmethod
-	def get_validation_steps() -> int:
+	def get_validation_steps(self) -> int:
 		pass
 
 	@abc.abstractclassmethod
-	def get_testing_steps() -> int:
+	def get_testing_steps(self) -> int:
 		pass
 
 	@abc.abstractclassmethod
@@ -56,18 +57,23 @@ class ImageClassificationBenchmarkDataset(Dataset):
 		self.class_count = class_count
 
 	def load(self):
-		train_split_float = np.float(1.0 - self.validation_split_float)
-		val_split_percent = int(self.validation_split_float * 100)
-		train_split_percent = int(train_split_float * 100)
-		#Tensorflow dataset load
-		self.train_original, self.info = tfds.load(self.dataset_name, with_info=True, as_supervised=True, split='train[:{}%]'.format(train_split_percent))
-		train_augmented = tfds.load(self.dataset_name, as_supervised=True, split='train[:{}%]'.format(train_split_percent))
-		train_augmented = train_augmented.map(self._augment)
-		self.train = self.train_original.concatenate(train_augmented)
-		self.validation = tfds.load(self.dataset_name, as_supervised=True, split='train[-{}%:]'.format(val_split_percent))
-		self.train_split_count = self.info.splits['train'].num_examples * train_split_float
-		self.validation_split_count = self.info.splits['train'].num_examples * self.validation_split_float
-		self.test = tfds.load(self.dataset_name, as_supervised=True, split='test')
+		try:
+			train_split_float = np.float(1.0 - self.validation_split_float)
+			val_split_percent = int(self.validation_split_float * 100)
+			train_split_percent = int(train_split_float * 100)
+			#Tensorflow dataset load
+			self.train_original, self.info = tfds.load(self.dataset_name, with_info=True, as_supervised=True, split='train[:{}%]'.format(train_split_percent))
+			train_augmented = tfds.load(self.dataset_name, as_supervised=True, split='train[:{}%]'.format(train_split_percent))
+			train_augmented = train_augmented.map(self._augment)
+			self.train = self.train_original.concatenate(train_augmented)
+			self.validation = tfds.load(self.dataset_name, as_supervised=True, split='train[-{}%:]'.format(val_split_percent))
+			self.train_split_count = self.info.splits['train'].num_examples * train_split_float
+			self.validation_split_count = self.info.splits['train'].num_examples * self.validation_split_float
+			self.test = tfds.load(self.dataset_name, as_supervised=True, split='test')
+		except:
+			#InitNodes.decide_print_form(MSGType.MASTER_ERROR, {'node': 1, 'msg': 'Somethings went wrong trying to load the dataset, please check the parameters and info'})
+			print('Somethings went wrong trying to load the Image dataset, please check the parameters and info')
+			raise
 
 	def get_train_data(self, use_augmentation: False):
 		train_data = None
@@ -137,7 +143,7 @@ class RegressionBenchmarkDataset(Dataset):
 		self.ranges = []
 		self.feature_size = feature_size
 
-	def load(self):
+	def load(self, init_route=None):
 		train_split_float = np.float(1.0 - self.validation_split_float)
 		val_split_percent = int(self.validation_split_float * 100)
 		train_split_percent = int(train_split_float * 100)
@@ -149,7 +155,11 @@ class RegressionBenchmarkDataset(Dataset):
 			self.test = tfds.load(self.dataset_name, as_supervised=True, split='test')
 		except:
 			try:
-				route = '../mloptimizermodelgenerator/Datasets/Regression/'+self.dataset_name
+				if init_route == None:
+					route = '../mloptimizermodelgenerator/Datasets/Regression/' + self.dataset_name
+				else:
+					route = init_route + 'Datasets/Regression/'+ self.dataset_name
+				print(init_route)
 				with open(route+'info.json') as jsonfile:
 					info = json.load(jsonfile)
 				self.train_split_count = int(info['splits']['train']*train_split_float)
@@ -163,7 +173,8 @@ class RegressionBenchmarkDataset(Dataset):
 				self.validation = self.numpy_data_to_tfdataset(self.validation, self.n_labels)
 				self.test = self.numpy_data_to_tfdataset(self.test, self.n_labels)
 			except:
-				print("Somethings went wrong trying to load the dataset, please check the parameters and info")
+				#InitNodes.decide_print_form(MSGType.SLAVE_STATUS, {'node': 1, 'msg': 'Somethings went wrong trying to load the dataset, please check the parameters and info'})
+				print('Somethings went wrong trying to load the Regression dataset, please check the parameters and info')
 				raise
 
 	def numpy_data_to_tfdataset(self, data, n_labels):
@@ -173,6 +184,7 @@ class RegressionBenchmarkDataset(Dataset):
 		return dataset
 
 	def get_train_data(self, use_augmentation: False):
+		#train_data = self.train_original.shuffle(self.shuffle_cache).cache().batch(self.batch_size).repeat()
 		train_data = self.train_original.cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
 		return train_data
 
@@ -244,7 +256,8 @@ class TimeSeriesBenchmarkDataset(Dataset):
 				self.validation = self.time_series_partition(self.validation, self.window_size)
 				self.test = self.time_series_partition(self.test, self.window_size)
 			except:
-				print("Somethings went wrong trying to load the dataset, please check the parameters and info")
+				#InitNodes.decide_print_form(MSGType.MASTER_ERROR, {'node': 1, 'msg': 'Somethings went wrong trying to load the dataset, please check the parameters and info'})
+				print('Somethings went wrong trying to load the time series dataset, please check the parameters and info')
 				raise
 
 	def time_series_partition(self, data, window_size):
@@ -262,7 +275,7 @@ class TimeSeriesBenchmarkDataset(Dataset):
 		try:
 			labels = data[:,-n_labels:]
 		except:
-			print(data)
+			print("Error numpy to dataset",data)
 			print(data.shape)
 		samples = data[:,:-n_labels]
 		samples = samples.reshape((samples.shape[0], 1, samples.shape[1]))

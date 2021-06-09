@@ -1,5 +1,6 @@
 from optuna.pruners import BasePruner
 from optuna.structs import TrialState
+from app.common.socketCommunication import *
 
 class RepeatPruner(BasePruner):
 	#Based on https://github.com/Minyus/optkeras/blob/master/optkeras/optkeras.py
@@ -18,6 +19,6 @@ class RepeatPruner(BasePruner):
 		completed_params_list = [t.params for t in all_trials if t.state == TrialState.COMPLETE or t.state == TrialState.RUNNING]
 		#Check if current trial is repeated
 		if trial.params in completed_params_list:
-			print("A trial was pruned")
+			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': "A trial was pruned"})
 			return True
 		return False

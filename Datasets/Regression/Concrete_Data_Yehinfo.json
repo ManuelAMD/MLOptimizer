@@ -1,0 +1,18 @@
+{
+	"name":"Concrete_Data_Yeh",
+	"version":1.0,
+	"description":"Concrete Data",
+	"homepage":"https://www.kaggle.com/kushalvala/concrete",
+	"features":{
+		"value":8,
+		"label":1
+	},
+	"total_num_examples":1030,
+	"splits":{
+		"test":206,
+		"train":824
+	},
+	"supervised_keys":["value", "label"],
+	"citation":"",
+	"redistribution_info":""
+}

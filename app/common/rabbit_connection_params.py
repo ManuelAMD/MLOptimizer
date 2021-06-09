@@ -1,10 +1,5 @@
 from dataclasses import dataclass
-from system_parameters import *
-from enum import Enum
-
-class ConnectionType(Enum):
-    MASTER = 1
-    SLAVE = 2
+from system_parameters import SystemParameters as SP
 
 #Connection params for rabbitMQ
 @dataclass(frozen=True)
@@ -17,7 +12,18 @@ class RabbitConnectionParams:
 	password: str
 	virtual_host: str
 
-	def new(connection_type: int, slave_number=0):
+	@staticmethod
+	def new():
+		return RabbitConnectionParams(
+			port = int(SP.INSTANCE_CONNECTION[0]),
+			model_parameter_queue = SP.INSTANCE_CONNECTION[1],
+			model_performance_queue = SP.INSTANCE_CONNECTION[2],
+			host_url = SP.INSTANCE_CONNECTION[3],
+			user = SP.INSTANCE_CONNECTION[4],
+			password = SP.INSTANCE_CONNECTION[5],
+			virtual_host = SP.INSTANCE_CONNECTION[6],
+		)
+		"""
 		if connection_type == ConnectionType.MASTER:
 			return RabbitConnectionParams(
 				port = int(MASTER_CONNECTION[0]),
@@ -37,4 +43,4 @@ class RabbitConnectionParams:
 				user = SLAVES_CONNECTIONS[slave_number][4],
 				password = SLAVES_CONNECTIONS[slave_number][5],
 				virtual_host = SLAVES_CONNECTIONS[slave_number][6],
-			)
+			)"""

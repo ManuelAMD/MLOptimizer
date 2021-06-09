@@ -2,13 +2,15 @@ import datetime
 from enum import Enum
 from typing import List
 import optuna
+from app.common.model import Model
 from optuna.samplers import TPESampler
 from optuna.structs import TrialState
 from app.common.model_communication import *
 from app.common.search_space import *
 from app.common.repeat_pruner import RepeatPruner
 from app.common.dataset import Dataset
-from system_parameters import *
+from system_parameters import SystemParameters as SP
+from app.common.socketCommunication import *
 
 class OptimizationStrategy(object):
 
@@ -43,19 +45,21 @@ class OptimizationStrategy(object):
 	def _recommend_model_exploration(self) -> ModelTrainingRequest:
 		trial = self._create_new_trial()
 		params = self.model_architecture_factory.generate_model_params(trial, self.dataset.get_input_shape())
-		print('Generated trial', trial.number)
+		cad = 'Generated trial ' + str(trial.number)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if trial.should_prune():
 			self._on_trial_pruned(trial)
-			print('Prunned trial', trial.number)
+			cad = 'Prunned trial ' + str(trial.number)
+			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 			return self.recommend_model()
-		epochs = EXPLORATION_EPOCHS
+		epochs = SP.EXPLORATION_EPOCHS
 		model_training_request = ModelTrainingRequest(
 			id=trial.number,
-			training_type=DATASET_TYPE,
+			training_type=SP.DATASET_TYPE,
 			experiment_id=self.experiment_id,
 			architecture=params,
 			epochs=epochs,
-			early_stopping_patience=EXPLORATION_EARLY_STOPPING_PATIENCE,
+			early_stopping_patience=SP.EXPLORATION_EARLY_STOPPING_PATIENCE,
 			is_partial_training=True,
 			search_space_type=self.search_space_type.value,
 			search_space_hash=self.search_space_hash,
@@ -67,21 +71,22 @@ class OptimizationStrategy(object):
 	def _recommend_model_hof(self) -> ModelTrainingRequest:
 		hof_model: CompletedModel = self.hall_of_fame.pop(0)
 		model_training_request: ModelTrainingRequest = hof_model.model_training_request
-		model_training_request.epochs = HALL_OF_FAME_EPOCHS
-		model_training_request.early_stopping_patience = HOF_EARLY_STOPPING_PATIENCE
+		model_training_request.epochs = SP.HALL_OF_FAME_EPOCHS
+		model_training_request.early_stopping_patience = SP.HOF_EARLY_STOPPING_PATIENCE
 		model_training_request.is_partial_training = False
 		self.deep_training_models_requests.append(model_training_request)
 		return model_training_request
 
 	def should_generate(self) -> bool:
-		print('Should generate another model?')
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Should generate another model?'})
 		if self.phase == Phase.EXPLORATION:
 			return self._should_generate_exploration()
 		elif self.phase == Phase.DEEP_TRAINING:
 			return self._should_generate_hof()
 
 	def _should_generate_exploration(self) -> bool:
-		print('Generated exploration models', len(self.exploration_models_requests), '/', self.exploration_trials)
+		cad = 'Generated exploration models' + str(len(self.exploration_models_requests)) + ' / ' + str(self.exploration_trials)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		should_generate = False
 		pending_to_generate = self.exploration_trials - len(self.exploration_models_requests)
 		if pending_to_generate > 0:
@@ -89,13 +94,15 @@ class OptimizationStrategy(object):
 		return should_generate
 
 	def _should_generate_hof(self) -> bool:
-		print('Generated hall of fame models',len(self.deep_training_models_requests), '/', self.hall_of_fame_size)
+		cad = 'Generated hall of fame models ' + str(len(self.deep_training_models_requests)) + ' / ' + str(self.hall_of_fame_size)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		should_generate = False
 		if len(self.deep_training_models_requests) < self.hall_of_fame_size:
 			should_generate = True
 		return should_generate
 
 	def should_wait(self):
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Should wait?'})
 		print('Should wait?')
 		if self.phase == Phase.EXPLORATION:
 			return self._should_wait_exploration()
@@ -103,28 +110,43 @@ class OptimizationStrategy(object):
 			return self._should_generate_hof()
 
 	def _should_wait_exploration(self) -> bool:
-		print('Received exploration models', len(self.exploration_models_completed), '/', self.exploration_trials)
+		cad = 'Received exploration models ' + str(len(self.exploration_models_completed)) + ' / ' + str(self.exploration_trials)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		should_wait = True
 		if len(self.exploration_models_requests) == len(self.exploration_models_completed):
 			should_wait = False
 		return should_wait
 
-	def _should_wait_hof(self) -> bool: 
-		print('Received hall of fame models', len(self.deep_training_models_requests), '/', self.hall_of_fame_size)
+	def _should_wait_hof(self) -> bool:
+		cad = 'Received hall of fame models ' + str(len(self.deep_training_models_requests)) + ' / ' + str(self.hall_of_fame_size)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		should_wait = True
-		if len(self.deep_training_models_completed) == self.hall_of_fame:
+		if len(self.deep_training_models_completed) == self.hall_of_fame_size:
 			should_wait = False
 		return should_wait
+
+	def get_training_total(self)-> int:
+		if self.phase == Phase.EXPLORATION:
+			return self.exploration_trials
+		elif self.phase == Phase.DEEP_TRAINING:
+			return self.hall_of_fame_size
 
 	def is_finished(self):
 		return not self._should_wait_exploration() and not self._should_wait_hof()
 
-	def get_best_model(self):
-		#If the value of the model is the max.
-		if self.search_space_type == SearchSpaceType.IMAGE:
-			return self.get_best_classification_model()
-		#If the value of the model is the min.
-		return self.get_best_regression_model()
+	def get_best_model(self, action=None):
+		if self.phase == Phase.DEEP_TRAINING and action != Action.START_NEW_PHASE:
+			#If the value of the model is the max.
+			if self.search_space_type == SearchSpaceType.IMAGE:
+				return self.get_best_classification_model()
+			#If the value of the model is the min.
+			return self.get_best_regression_model()
+		else:
+			#If the value of the model is the max.
+			if self.search_space_type == SearchSpaceType.IMAGE:
+				return self.get_best_exploration_classification_model()
+			#If the value of the model is the min.
+			return self.get_best_exploration_regression_model()
 
 	def get_best_classification_model(self):
 		best_model = max(self.deep_training_models_completed, key=lambda completed_model: completed_model.performance_2)
@@ -151,16 +173,16 @@ class OptimizationStrategy(object):
 		self.storage.set_trial_state(trial.number, TrialState.PRUNED)
 
 	def _build_hall_of_fame_classification(self):
-		print('Building Hall Of Fame for classification problem')
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Building Hall Of Fame for classification problem'})
 		stored_completed_models = sorted(self.exploration_models_completed, key=lambda completed_model: completed_model.performance, reverse=True)
-		self.hall_of_fame = sorted_completed_models[0 : self.hall_of_fame_size]
+		self.hall_of_fame = stored_completed_models[0 : self.hall_of_fame_size]
 		for model in self.hall_of_fame:
 			print(model)
 
 	def _build_hall_of_fame_regression(self):
-		print('Building Hall Of Fame for regression problem')
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Building Hall Of Fame for regression problem'})
 		stored_completed_models = sorted(self.exploration_models_completed, key=lambda completed_model: completed_model.performance)
-		self.hall_of_fame = sorted_completed_models[0 : self.hall_of_fame_size]
+		self.hall_of_fame = stored_completed_models[0 : self.hall_of_fame_size]
 		for model in self.hall_of_fame:
 			print(model)
 
@@ -175,7 +197,8 @@ class OptimizationStrategy(object):
 		self.exploration_models_completed.append(completed_model)
 
 	def report_model_response(self, model_training_response: ModelTrainingResponse):
-		print ('Trial', model_training_response.id, 'reported a score of', model_training_response.performance)
+		cad = 'Trial ' + str(model_training_response.id) + ' reported a score of ' + str(model_training_response.performance)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.search_space_type == SearchSpaceType.IMAGE:
 			if self.phase == Phase.EXPLORATION:
 				return self._report_model_response_exploration_classification(model_training_response)
@@ -197,18 +220,20 @@ class OptimizationStrategy(object):
 		self.storage.set_trial_state(model_training_response.id, TrialState.COMPLETE)
 		self._register_completed_model(model_training_response)
 		best_trial = self.get_best_exploration_classification_model()
-		print('Best exploration trial so far is #', best_trial.model_training_request.id, 'with a score of', best_trial.performance)
+		self.create_image_model(best_trial, 'Best_model.png')
+		cad = 'Best exploration trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
 			return Action.GENERATE_MODEL
 		elif self.should_wait():
 			return Action.WAIT
 		elif not self._should_generate_exploration() and not self._should_wait_exploration():
 			self._build_hall_of_fame_classification()
-			self.phase = self.Phase.DEEP_TRAINING
-			return self.Action.START_NEW_PHASE
+			self.phase = Phase.DEEP_TRAINING
+			return Action.START_NEW_PHASE
 
 	def _report_model_response_hof_classification(self, model_training_response: ModelTrainingResponse):
-		print('Received HoF model response')
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Received HoF model response'})
 		completed_model = next(
 			model
 			for model in self.exploration_models_completed
@@ -217,7 +242,9 @@ class OptimizationStrategy(object):
 		completed_model.performance_2 = model_training_response.performance
 		self.deep_training_models_completed.append(completed_model)
 		best_trial = self.get_best_classification_model()
-		print('Best HoF trial so far is #', best_trial.model_training_request.id, 'with a score of', best_trial.performance_2)
+		self.create_image_model(best_trial, 'Best_model.png')
+		cad = 'Best HoF trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance_2)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
 			return Action.GENERATE_MODEL
 		elif self.should_wait():
@@ -231,10 +258,12 @@ class OptimizationStrategy(object):
 		self.storage.set_trial_state(model_training_response.id, TrialState.COMPLETE)
 		self._register_completed_model(model_training_response)
 		best_trial = self.get_best_exploration_regression_model()
-		print('Best exploration trial so far is #', best_trial.model_training_request.id, 'with a score of', best_trial.performance_2)
+		self.create_image_model(best_trial, 'Best_model.png')
+		cad = 'Best exploration trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
 			return Action.GENERATE_MODEL
-		elif self.should_wait:
+		elif self.should_wait():
 			return Action.WAIT
 		elif not self._should_generate_exploration() and not self._should_wait_exploration():
 			self._build_hall_of_fame_regression()
@@ -242,7 +271,7 @@ class OptimizationStrategy(object):
 			return Action.START_NEW_PHASE
 
 	def _report_model_response_hof_regression(self, model_training_response: ModelTrainingResponse):
-		print('Received HoF model response')
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Received HoF model response'})
 		completed_model = next(
 			model
 			for model in self.exploration_models_completed
@@ -251,14 +280,19 @@ class OptimizationStrategy(object):
 		completed_model.performance_2 = model_training_response.performance
 		self.deep_training_models_completed.append(completed_model)
 		best_trial = self.get_best_regression_model()
-		print('Best HoF trial so far is #', best_trial.model_training_request.id, 'with a score of', best_trial.performance_2)
+		self.create_image_model(best_trial, 'Best_model.png')
+		cad = 'Best HoF trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance_2)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
 			return Action.GENERATE_MODEL
 		elif self.should_wait():
 			return Action.WAIT
-		elif not self._should_generate_hof() and not self._should_wait_hof():
+		elif (not self._should_generate_hof() and not self._should_wait_hof()):
 			return Action.FINISH
 
+	def create_image_model(self, best, name):
+		model = Model(best.model_training_request, self.dataset)
+		model.create_model_image(name)
 
 class Phase(Enum):
 	EXPLORATION = 1

@@ -1,4 +1,5 @@
-from app.init_nodes import slave
-from app.common.search_space import *
+from app.init_nodes import InitNodes
 
-slave()
+if __name__ == '__main__':
+    slaveNode = InitNodes()
+    slaveNode.slave()
