@@ -4,7 +4,7 @@
 	"description":"GPU Kernel Performance Dataset",
 	"homepage":"",
 	"features":{
-		"value":18,
+		"value":14,
 		"label":4
 	},
 	"total_num_examples":241600,

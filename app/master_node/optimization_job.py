@@ -92,7 +92,7 @@ class OptimizationJob:
 
 	async def _log_results(self, best_model):
 		filename = best_model.model_training_request.experiment_id
-		f = open(filename, "a")
+		f = open('Results/'+filename, "a")
 		model_info_json = json.dumps(asdict(best_model))
 		f.write(model_info_json)
 		f.close()
@@ -106,7 +106,7 @@ class OptimizationJob:
 		print('Information ranges from normalization')
 		print(ranges)
 
-		f = open(filename, "a")
+		f = open('Results/'+filename, "a")
 		ranges_json = json.dumps(ranges)
 		f.write(ranges_json)
 		f.close()
@@ -117,7 +117,7 @@ class OptimizationJob:
 		time_text = "\n Optimization took: " + str(elapsed_time) + " (hh:mm:ss) " + str(elapsed_seconds) + " (Seconds) "
 		print(time_text)
 
-		f = open(filename, "a")
+		f = open('Results/'+filename, "a")
 		f.write(time_text)
 		f.close()
 

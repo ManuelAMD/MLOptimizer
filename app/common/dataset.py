@@ -56,7 +56,7 @@ class ImageClassificationBenchmarkDataset(Dataset):
 		self.shape = shape
 		self.class_count = class_count
 
-	def load(self):
+	def load(self, init_route=None):
 		try:
 			train_split_float = np.float(1.0 - self.validation_split_float)
 			val_split_percent = int(self.validation_split_float * 100)
@@ -227,7 +227,7 @@ class TimeSeriesBenchmarkDataset(Dataset):
 		self.ranges = []
 		self.data_size = data_size
 
-	def load(self):
+	def load(self, init_route=None):
 		train_split_float = np.float(1.0 - self.validation_split_float)
 		val_split_percent = int(self.validation_split_float * 100)
 		train_split_percent = int(train_split_float * 100)
@@ -239,13 +239,17 @@ class TimeSeriesBenchmarkDataset(Dataset):
 			self.test = tfds.load(self.dataset_name, as_supervised=True, split='test')
 		except:
 			try:
-				ruta="../regressionmloptimizer/Datasets/TimeSeries/"+self.dataset_name
-				with open(ruta+'info.json') as jsonfile:
+				if init_route == None:
+					route = '../mloptimizermodelgenerator/Datasets/TimeSeries/' + self.dataset_name
+				else:
+					route = init_route + 'Datasets/TimeSeries/'+ self.dataset_name
+				print(init_route)
+				with open(route+'info.json') as jsonfile:
 					info = json.load(jsonfile)
 				self.train_split_count = int(info['splits']['train']*train_split_float)
 				self.validation_split_count = int(info['splits']['train']*self.validation_split_float)
 				data_col = info['features']['date']+info['features']['value']-1
-				all_data = np.array(pd.read_csv(ruta+'.csv'))
+				all_data = np.array(pd.read_csv(route+'.csv'))
 				all_data = all_data[:, data_col:]
 				#Normalizar la información.
 				all_data, self.ranges = normalization(all_data)

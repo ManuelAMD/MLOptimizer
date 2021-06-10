@@ -11,6 +11,7 @@ def normalization(data):
 	for i in range(shape[1]):
 		vals = data[:,i]
 		if isinstance(vals[0], str):
+			print("Hey")
 			vals, relations = StringToNumber(vals)
 			aux = DataFrame(aux)
 			aux[i] = vals
@@ -23,8 +24,8 @@ def normalization(data):
 			band = False
 		else:
 			originalValues.append((minValue, maxValue))
-		normalized_info = preprocessing.minmax_scale(aux, feature_range=(0,1))
-		return normalized_info, originalValues
+	normalized_info = preprocessing.minmax_scale(aux, feature_range=(0,1))
+	return normalized_info, originalValues
 
 def StringToNumber(data):
 	vals = list(set(data))

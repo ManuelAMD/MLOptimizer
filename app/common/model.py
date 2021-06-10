@@ -14,6 +14,10 @@ from app.common.dataset import Dataset
 from app.common.model_communication import *
 from system_parameters import SystemParameters as SP
 from app.common.Callbacks import EndEpoch
+#gpu_devices = tf.config.experimental.list_physical_devices("GPU")
+#print(gpu_devices)
+#for device in gpu_devices:
+#	tf.config.experimental.set_memory_growth(device, True)
 #physical_devices = tf.config.list_physical_devices('GPU')
 #tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
@@ -96,6 +100,7 @@ class Model:
 			early_stopping = keras.callbacks.EarlyStopping(monitor=monitor_exploration_training, patience=self.early_stopping_patience, verbose=1, restore_best_weights=False)
 		else:
 			early_stopping = keras.callbacks.EarlyStopping(monitor=monitor_full_training, patience=self.early_stopping_patience, verbose=1, restore_best_weights=True)
+
 		model_stage = "exp" if self.is_partial_training else "hof"
 		log_dir = "logs/{}/{}-{}".format(self.experiment_id, model_stage, str(self.id))
 		tensorboard = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
@@ -104,8 +109,8 @@ class Model:
 		total_weights = np.sum([np.prod(v.get_shape().as_list()) for v in model.variables])
 		cad = 'Total weights ' + str(total_weights)
 		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': cad})
-		self.remove_img(save_path)
 		if save_path != None:
+			self.remove_img(save_path)
 			print("Saving model at:", SP.DATA_ROUTE+save_path)
 			plot_model(model, to_file=SP.DATA_ROUTE+save_path+".png", show_shapes=True, show_layer_names=False)
 		else:
@@ -252,8 +257,8 @@ class Model:
 
 	def build_time_series_model(self, model_parameters: TimeSeriesModelArchitectureParameters, input_shape: tuple, class_count: int) -> keras.Sequential:
 		start_time = int(round(time.time() * 1000))
-		policy = mixed_precision.Policy('mixed_float16')
-		mixed_precision.set_policy(policy)
+		#policy = mixed_precision.Policy('mixed_float16')
+		#mixed_precision.set_policy(policy)
 		model = keras.Sequential()
 		model.add(keras.layers.Input(input_shape))
 		if model_parameters.base_architecture == 'lstm':

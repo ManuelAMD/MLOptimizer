@@ -220,7 +220,7 @@ class OptimizationStrategy(object):
 		self.storage.set_trial_state(model_training_response.id, TrialState.COMPLETE)
 		self._register_completed_model(model_training_response)
 		best_trial = self.get_best_exploration_classification_model()
-		self.create_image_model(best_trial, 'Best_model.png')
+		#self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best exploration trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
@@ -242,7 +242,7 @@ class OptimizationStrategy(object):
 		completed_model.performance_2 = model_training_response.performance
 		self.deep_training_models_completed.append(completed_model)
 		best_trial = self.get_best_classification_model()
-		self.create_image_model(best_trial, 'Best_model.png')
+		#self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best HoF trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance_2)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
@@ -258,7 +258,7 @@ class OptimizationStrategy(object):
 		self.storage.set_trial_state(model_training_response.id, TrialState.COMPLETE)
 		self._register_completed_model(model_training_response)
 		best_trial = self.get_best_exploration_regression_model()
-		self.create_image_model(best_trial, 'Best_model.png')
+		#self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best exploration trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
@@ -280,7 +280,7 @@ class OptimizationStrategy(object):
 		completed_model.performance_2 = model_training_response.performance
 		self.deep_training_models_completed.append(completed_model)
 		best_trial = self.get_best_regression_model()
-		self.create_image_model(best_trial, 'Best_model.png')
+		#self.create_image_model(best_trial, 'Best_model.png')
 		cad = 'Best HoF trial so far is # ' + str(best_trial.model_training_request.id) + ' with a score of ' + str(best_trial.performance_2)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		if self.should_generate():
