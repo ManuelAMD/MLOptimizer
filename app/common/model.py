@@ -71,6 +71,11 @@ class Model:
 			use_augmentation = not self.is_partial_training
 		else:
 			use_augmentation = False
+		
+		#config = tf.compat.v1.ConfigProto()
+		#config.gpu_options.allow_growth= True
+		#session= tf.compat.v1.Session(config=config)
+
 		input_shape = self.dataset.get_input_shape()
 		class_count = self.dataset.get_classes_count()
 		model = self.build_model(input_shape, class_count)
@@ -213,10 +218,10 @@ class Model:
 
 	def build_image_model(self, model_parameters: ImageModelArchitectureParameters, input_shape: tuple, class_count: int) -> keras.Sequential:
 		start_time = int(round(time.time() * 1000))
-		policy = mixed_precision.Policy('mixed_float16')
-		mixed_precision.set_policy(policy)
-		print('Compute dtype: %s' % policy.compute_dtype)
-		print('Variable dtype: %s' % policy.variable_dtype)
+		#policy = mixed_precision.Policy('mixed_float16')
+		#mixed_precision.set_policy(policy)
+		#print('Compute dtype: %s' % policy.compute_dtype)
+		#print('Variable dtype: %s' % policy.variable_dtype)
 		model = keras.Sequential()
 		model.add(keras.layers.Input(input_shape))
 		if model_parameters.base_architecture == 'cnn':

@@ -41,8 +41,8 @@ class SystemParameters:
     DATA_ROUTE: str = None
 
     #Dataset parameters
-    #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans
-    DATASET_NAME: str = 'cifar10'
+    #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans, emnist
+    DATASET_NAME: str = 'emnist'
     #DATASET_NAME: str = 'monthly-beer-production-in-austr'
     #Types: image = 1, regression = 2, time-series = 3.
     DATASET_TYPE: int = 1
@@ -50,9 +50,9 @@ class SystemParameters:
     DATASET_VALIDATION_SPLIT: float = 0.2
    #empty for tensorflowDatasets
     #DATASET_INFO_ROUTE: str = '' 
-    DATASET_SHAPE: tuple = (32,32,3)
+    DATASET_SHAPE: tuple = (28,28,1)
     #Image dataset parameters
-    DATASET_CLASSES: int = 10
+    DATASET_CLASSES: int = 62
     #Regression dataset parameters
     DATASET_FEATURES: int = 8
     DATASET_LABELS: int = 2
@@ -66,11 +66,11 @@ class SystemParameters:
     TRAIN_GPU: bool = True
     TRIALS = 10
     #Exploration parameters 
-    EXPLORATION_SIZE: int = 500
+    EXPLORATION_SIZE: int = 100
     EXPLORATION_EPOCHS: int = 10
-    EXPLORATION_EARLY_STOPPING_PATIENCE: int = 2
+    EXPLORATION_EARLY_STOPPING_PATIENCE: int = 3
     #Hall of fame parameters
-    HALL_OF_FAME_SIZE: int = 10
+    HALL_OF_FAME_SIZE: int = 3
     HALL_OF_FAME_EPOCHS: int = 300
     HOF_EARLY_STOPPING_PATIENCE: int = 15
 
