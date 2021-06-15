@@ -268,7 +268,7 @@ class Model:
 		model.add(keras.layers.Input(input_shape))
 		if model_parameters.base_architecture == 'lstm':
 			self._add_time_series_lstm_architecture(model, model_parameters, class_count, SP.LSTM_ACTIVATION_FUNCTION)
-		if model_parameters.base_architecture == 'mlp':
+		if model_parameters.base_architecture == 'mlp' or model_parameters.classifier_layer == 'mlp':
 			self._add_mlp_architecture(model, model_parameters, class_count, SP.KERNEL_INITIALIZER, SP.LAYERS_ACTIVATION_FUNCTION)
 		#All combination has the same final layers
 		model.add(keras.layers.Dense(class_count))

@@ -108,13 +108,13 @@ class OptimizationJob:
 
 		f = open('Results/'+filename, "a")
 		ranges_json = json.dumps(ranges)
-		f.write(ranges_json)
+		f.write('\n'+ranges_json)
 		f.close()
 
 		elapsed_seconds = time.time() - self.start_time
 		elapsed_time = time.strftime('%H:%M:%S', time.gmtime(elapsed_seconds))
 
-		time_text = "\n Optimization took: " + str(elapsed_time) + " (hh:mm:ss) " + str(elapsed_seconds) + " (Seconds) "
+		time_text = "\nOptimization took: " + str(elapsed_time) + " (hh:mm:ss) " + str(elapsed_seconds) + " (Seconds) "
 		print(time_text)
 
 		f = open('Results/'+filename, "a")
