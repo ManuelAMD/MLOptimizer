@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 28, "training_type": 3, "experiment_id": "monthly-beer-production-in-austr-20210617-154932", "architecture": {"base_architecture": "mlp", "lstm_layers_n": 0, "lstm_layers_units": [], "classifier_layer": "mlp", "classifier_layers_n": 5, "classifier_dropouts": [0, 0.1, 0, 0.1, 0.2], "classifier_layers_units": [64, 432, 368, 336, 80], "learning_rate": 0.0}, "epochs": 300, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "time_series", "search_space_hash": -2401909015397029325, "dataset_tag": "monthly-beer-production-in-austr"}, "performance": 0.008123729377985, "performance_2": 0.0036350716836750507}
+[[64.8, 217.8]]
+Optimization took: 00:09:41 (hh:mm:ss) 581.5894379615784 (Seconds) 

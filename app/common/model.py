@@ -14,10 +14,10 @@ from app.common.dataset import Dataset
 from app.common.model_communication import *
 from system_parameters import SystemParameters as SP
 from app.common.Callbacks import EndEpoch
-#gpu_devices = tf.config.experimental.list_physical_devices("GPU")
-#print(gpu_devices)
-#for device in gpu_devices:
-#	tf.config.experimental.set_memory_growth(device, True)
+gpu_devices = tf.config.experimental.list_physical_devices("GPU")
+print(gpu_devices)
+for device in gpu_devices:
+	tf.config.experimental.set_memory_growth(device, True)
 #physical_devices = tf.config.list_physical_devices('GPU')
 #tf.config.experimental.set_memory_growth(physical_devices[0], True)
 

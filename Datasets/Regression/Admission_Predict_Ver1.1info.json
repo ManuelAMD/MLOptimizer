@@ -4,7 +4,7 @@
 	"description":"Admission acceptance percentaje",
 	"homepage":"",
 	"features":{
-		"value":8,
+		"value":7,
 		"label":1
 	},
 	"total_num_examples":500,

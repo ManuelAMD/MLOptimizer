@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 388, "training_type": 2, "experiment_id": "Admission_Predict_Ver1.1-20210616-181221", "architecture": {"base_architecture": "mlp", "classifier_layers_n": 4, "classifier_dropouts": [0.1, 0, 0.1, 0.1], "classifier_layers_units": [432, 48, 16, 128], "learning_rate": 0.0}, "epochs": 300, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "regression", "search_space_hash": 2156179262504553724, "dataset_tag": "Admission_Predict_Ver1.1"}, "performance": 0.013973417691886425, "performance_2": 0.005817950237542391}
+[[290.0, 340.0], [92.0, 120.0], [1.0, 5.0], [1.0, 5.0], [1.0, 5.0], [6.8, 9.92], [0.0, 1.0], [0.34, 0.97]]
+Optimization took: 00:15:38 (hh:mm:ss) 938.4846057891846 (Seconds) 

@@ -4,20 +4,6 @@ Parameters class for system modification
 Modify this class to change the parameters for training and datasets options
 
 """
-"""
-#Rabbit MQ Connections
-MASTER_PORT: int = 15672
-MASTER_MODEL_PARAMETER_QUEUE: str = 'parameters'
-MASTER_MODEL_PERFORMANCE_QUEUE: str = 'results'
-MASTER_HOST_URL: str = 'localhost'
-MASTER_USER: str = 'guest'
-MASTER_PASSWORD: str = 'guest'
-MASTER_VIRTUAL_HOST: str = '/'
-
-MASTER_CONNECTION = [MASTER_PORT, MASTER_MODEL_PARAMETER_QUEUE, MASTER_MODEL_PERFORMANCE_QUEUE, MASTER_HOST_URL, MASTER_USER, MASTER_PASSWORD, MASTER_VIRTUAL_HOST]
-#For each connection, it counts like it's an slave.
-SLAVES_CONNECTIONS = [[15672, 'parameters', 'results', 'localhost', 'guest', 'guest', '/'],[15672, 'parameters', 'results', 'localhost', 'guest', 'guest', '/']]
-"""
 class SystemParameters:
     #Rabbit MQ Connections
     INSTANCE_PORT: int = 5672
@@ -42,20 +28,22 @@ class SystemParameters:
 
     #Dataset parameters
     #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans, emnist
-    DATASET_NAME: str = 'emnist'
-    #DATASET_NAME: str = 'monthly-beer-production-in-austr'
+    #DATASET_NAME: str = 'mnist'
+    DATASET_NAME: str = 'monthly-beer-production-in-austr'
     #Types: image = 1, regression = 2, time-series = 3.
-    DATASET_TYPE: int = 1
-    DATASET_BATCH_SIZE: int = 128
+    DATASET_TYPE: int = 3
+    DATASET_BATCH_SIZE: int = 512
     DATASET_VALIDATION_SPLIT: float = 0.2
    #empty for tensorflowDatasets
     #DATASET_INFO_ROUTE: str = '' 
-    DATASET_SHAPE: tuple = (28,28,1)
+    #DATASET_SHAPE: tuple = (28,28,1)
+    DATASET_SHAPE: tuple = (1,1)
+    #DATASET_SHAPE: tuple = (8)
     #Image dataset parameters
-    DATASET_CLASSES: int = 62
+    DATASET_CLASSES: int = 10
     #Regression dataset parameters
     DATASET_FEATURES: int = 8
-    DATASET_LABELS: int = 2
+    DATASET_LABELS: int = 1
     #Time Series dataset parameters
     DATASET_WINDOW_SIZE: int = 60
     DATASET_DATA_SIZE: int = 1
@@ -66,11 +54,11 @@ class SystemParameters:
     TRAIN_GPU: bool = True
     TRIALS = 10
     #Exploration parameters 
-    EXPLORATION_SIZE: int = 100
+    EXPLORATION_SIZE: int = 500
     EXPLORATION_EPOCHS: int = 10
     EXPLORATION_EARLY_STOPPING_PATIENCE: int = 3
     #Hall of fame parameters
-    HALL_OF_FAME_SIZE: int = 3
+    HALL_OF_FAME_SIZE: int = 10
     HALL_OF_FAME_EPOCHS: int = 300
     HOF_EARLY_STOPPING_PATIENCE: int = 15
 
@@ -78,10 +66,10 @@ class SystemParameters:
     #Model parameters
     DTYPE: str = 'float32'
     OPTIMIZER: str = 'adam'
-    LAYERS_ACTIVATION_FUNCTION: str = 'relu'
-    OUTPUT_ACTIVATION_FUNCTION: str = 'softmax'
-    KERNEL_INITIALIZER: str = 'he_uniform'
-    LOSS_FUNCTION: str = 'sparse_categorical_crossentropy'
+    #LAYERS_ACTIVATION_FUNCTION: str = 'relu'
+    #OUTPUT_ACTIVATION_FUNCTION: str = 'softmax'
+    #KERNEL_INITIALIZER: str = 'he_uniform'
+    #LOSS_FUNCTION: str = 'sparse_categorical_crossentropy'
 
     #Image Classification
     #LOSS_FUNCTION: str = 'sparse_categorical_crossentropy'
@@ -99,8 +87,8 @@ class SystemParameters:
     #KERNEL_INITIALIZER: str = 'normal'
 
     #Time-series models
-    #LOSS_FUNCTION: str = 'mse'
+    LOSS_FUNCTION: str = 'mse'
     LSTM_ACTIVATION_FUNCTION: str = 'tanh'
-    #LAYERS_ACTIVATION_FUNCTION: str = 'tanh'
-    #OUTPUT_ACTIVATION_FUNCTION: str = 'tanh'
-    #KERNEL_INITIALIZER: str = 'normal'
+    LAYERS_ACTIVATION_FUNCTION: str = 'tanh'
+    OUTPUT_ACTIVATION_FUNCTION: str = 'tanh'
+    KERNEL_INITIALIZER: str = 'normal'

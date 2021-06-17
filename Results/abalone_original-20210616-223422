@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 13, "training_type": 2, "experiment_id": "abalone_original-20210616-223422", "architecture": {"base_architecture": "mlp", "classifier_layers_n": 2, "classifier_dropouts": [0.1, 0.2], "classifier_layers_units": [48, 160], "learning_rate": 0.0}, "epochs": 300, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "regression", "search_space_hash": 2156179262504553724, "dataset_tag": "abalone_original"}, "performance": 0.006187474355101585, "performance_2": 0.004441422410309315}
+[[0, 2, [["F", 0], ["M", 1], ["I", 2]]], [15, 163], [11, 130], [0, 226], [0.4, 565.1], [0.2, 297.6], [0.1, 152.0], [0.3, 201.0], [1, 29]]
+Optimization took: 00:13:42 (hh:mm:ss) 822.1859047412872 (Seconds) 
