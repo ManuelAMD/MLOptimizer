@@ -24,6 +24,6 @@ def reproduce_Architecture(f):
     m.build_model((1,1),1)
     return None
 
-filename = 'Architecture Results/daily-min-temperatures-20210609-213703'
+filename = 'Architecture Results/monthly-beer-production-in-austr-20210617-162711'
 f = open(filename)
 reproduce_Architecture(f)
