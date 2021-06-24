@@ -248,17 +248,22 @@ class TimeSeriesBenchmarkDataset(Dataset):
 					info = json.load(jsonfile)
 				self.train_split_count = int(info['splits']['train']*train_split_float)
 				self.validation_split_count = int(info['splits']['train']*self.validation_split_float)
-				data_col = info['features']['date']+info['features']['value']-1
+				#data_col = info['features']['date']+info['features']['value']-1
+				data_col = info['features']['value']-1
 				all_data = np.array(pd.read_csv(route+'.csv'))
 				all_data = all_data[:, data_col:]
 				#Normalizar la información.
 				all_data, self.ranges = normalization(all_data)
+				print(all_data.shape)
 				self.train_original = all_data[:self.train_split_count]
+				print(self.train_original.shape)
 				self.validation = all_data[self.train_split_count : self.train_split_count + self.validation_split_count]
 				self.test = all_data[-info['splits']['test']:]
+				print(self.train_original)
 				self.train_original = self.time_series_partition(self.train_original, self.window_size)
 				self.validation = self.time_series_partition(self.validation, self.window_size)
 				self.test = self.time_series_partition(self.test, self.window_size)
+				
 			except:
 				#InitNodes.decide_print_form(MSGType.MASTER_ERROR, {'node': 1, 'msg': 'Somethings went wrong trying to load the dataset, please check the parameters and info'})
 				print('Somethings went wrong trying to load the time series dataset, please check the parameters and info')
@@ -267,9 +272,15 @@ class TimeSeriesBenchmarkDataset(Dataset):
 	def time_series_partition(self, data, window_size):
 		full_data = []
 		for i in range(len(data) - window_size):
-			x_part = data[i:i+window_size]
-			y_part = data[i+window_size]
-			full_data.append(np.append(x_part, y_part))
+			#contiene la info de entrenamiento y la y
+			x_part = data[i:i+window_size+1]
+			#y_part = data[i+window_size]
+			#print(x_part.shape)
+			#print(y_part.shape)		
+			#print(np.append(x_part, y_part).shape)
+			#input()
+			#full_data.append(np.append(x_part, y_part))
+			full_data.append(x_part)
 		full_data = np.array(full_data)
 		full_data = np.asarray(full_data).astype('float64')
 		dataset = self.numpy_data_to_tfdataset(full_data, 1)
@@ -282,7 +293,7 @@ class TimeSeriesBenchmarkDataset(Dataset):
 			print("Error numpy to dataset",data)
 			print(data.shape)
 		samples = data[:,:-n_labels]
-		samples = samples.reshape((samples.shape[0], 1, samples.shape[1]))
+		samples = samples.reshape((samples.shape[0], samples.shape[2], samples.shape[1]))
 		dataset = tf.data.Dataset.from_tensor_slices((samples, labels))
 		return dataset
 

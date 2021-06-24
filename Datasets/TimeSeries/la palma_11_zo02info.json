@@ -1,0 +1,18 @@
+{
+	"name":"la palma_11_zo02",
+	"version":1.0,
+	"description":"Velocidad viento la palma 11",
+	"homepage":"",
+	"features":{
+		"date":2,
+		"value":3
+	},
+	"total_num_examples":7602,
+	"splits":{
+		"test":1520,
+		"train":6082
+	},
+	"supervised_keys":["date", "value"],
+	"citation":"",
+	"redistribution_info":""
+}

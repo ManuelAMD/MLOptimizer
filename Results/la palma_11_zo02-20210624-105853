@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 41, "training_type": 3, "experiment_id": "la palma_11_zo02-20210624-105853", "architecture": {"base_architecture": "mlp", "lstm_layers_n": 0, "lstm_layers_units": [], "classifier_layer": "mlp", "classifier_layers_n": 4, "classifier_dropouts": [0.3, 0, 0.1, 0], "classifier_layers_units": [512, 512, 16, 224], "learning_rate": 0.0}, "epochs": 300, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "time_series", "search_space_hash": -2401909015397029325, "dataset_tag": "la palma_11_zo02"}, "performance": 0.02095327526330948, "performance_2": 0.019281253218650818}
+[[38, 338], [1.1, 24.3], [1.6, 37.2]]
+Optimization took: 01:04:52 (hh:mm:ss) 3892.8088223934174 (Seconds) 

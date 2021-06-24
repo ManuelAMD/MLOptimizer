@@ -29,7 +29,7 @@ class SystemParameters:
     #Dataset parameters
     #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans, emnist
     #DATASET_NAME: str = 'mnist'
-    DATASET_NAME: str = 'monthly-beer-production-in-austr'
+    DATASET_NAME: str = 'la palma_11_zo02'
     #Types: image = 1, regression = 2, time-series = 3.
     DATASET_TYPE: int = 3
     DATASET_BATCH_SIZE: int = 512
@@ -37,7 +37,7 @@ class SystemParameters:
    #empty for tensorflowDatasets
     #DATASET_INFO_ROUTE: str = '' 
     #DATASET_SHAPE: tuple = (28,28,1)
-    DATASET_SHAPE: tuple = (1,1)
+    DATASET_SHAPE: tuple = (1,3)
     #DATASET_SHAPE: tuple = (8)
     #Image dataset parameters
     DATASET_CLASSES: int = 10
@@ -45,8 +45,8 @@ class SystemParameters:
     DATASET_FEATURES: int = 8
     DATASET_LABELS: int = 1
     #Time Series dataset parameters
-    DATASET_WINDOW_SIZE: int = 60
-    DATASET_DATA_SIZE: int = 1
+    DATASET_WINDOW_SIZE: int = 100
+    DATASET_DATA_SIZE: int = 3
 
 
     #AutoML parameters
