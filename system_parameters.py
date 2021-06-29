@@ -29,7 +29,7 @@ class SystemParameters:
     #Dataset parameters
     #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans, emnist
     #DATASET_NAME: str = 'mnist'
-    DATASET_NAME: str = 'la palma_11_zo02'
+    DATASET_NAME: str = 'corrales_07_zo02'
     #Types: image = 1, regression = 2, time-series = 3.
     DATASET_TYPE: int = 3
     DATASET_BATCH_SIZE: int = 512

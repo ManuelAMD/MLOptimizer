@@ -1,0 +1,18 @@
+{
+	"name":"Manzanillo_03_zo015",
+	"version":1.0,
+	"description":"Velocidad viento Manzanillo",
+	"homepage":"",
+	"features":{
+		"date":2,
+		"value":3
+	},
+	"total_num_examples":3760,
+	"splits":{
+		"test":752,
+		"train":3008
+	},
+	"supervised_keys":["date", "value"],
+	"citation":"",
+	"redistribution_info":""
+}
