@@ -44,6 +44,8 @@ class Model:
 			return self.build_regression_model(self.model_params, input_shape, class_count)
 		elif self.search_space_type == SearchSpaceType.TIME_SERIES:
 			return self.build_time_series_model(self.model_params, input_shape, class_count)
+		elif self.search_space_type == SearchSpaceType.IMAGE_TIME_SERIES:
+			return self.build_image_time_series_model(self.model_params, input_shape, class_count)
 
 	def remove_img(self, path):
 		if os.path.exists(path):
@@ -275,6 +277,27 @@ class Model:
 		model.add(keras.layers.Activation(SP.OUTPUT_ACTIVATION_FUNCTION, dtype=SP.DTYPE))
 		model.compile(optimizer=SP.OPTIMIZER, loss=SP.LOSS_FUNCTION)
 		elapsed_seconds = int(round(time.time() * 1000))- start_time
+		print("Model building took", elapsed_seconds, "(miliseconds)")
+		model.summary()
+		return model
+
+	def build_image_time_series_model(self, model_parameters: ImageTimeSeriesModelArchitectureParameters, input_shape: tuple, class_count: int) -> keras.Sequential:
+		start_time = int(round(time.time() * 1000))
+		#policy = mixed_precision.Policy('mixed_float16')
+		#mixed_precision.set_policy(policy)
+		model = keras.Sequential()
+		model.add(keras.layers.Input(input_shape))
+		for i in range(model_parameters.codifier_layers_n):
+			model.add(keras.layers.Conv2D(model_parameters.codifier_units[i], model_parameters.conv_kernels[i], padding='same', activation=SP.LAYERS_ACTIVATION_FUNCTION))
+			model.add(keras.layers.MaxPooling2D((model_parameters.kernels_x[i], model_parameters.kernels_y[i])))
+		for i in reversed(range(model_parameters.codifier_layers_n)):
+			model.add(keras.layers.Conv2D(model_parameters.codifier_units[i], model_parameters.conv_kernels[i], padding='same', activation=SP.LAYERS_ACTIVATION_FUNCTION))
+			model.add(keras.layers.UpSampling2D((model_parameters.kernels_x[i], model_parameters.kernels_y[i])))
+		#Output Layer
+		model.add(keras.layers.Conv2D(input_shape, (3,3), activation=SP.LAYERS_ACTIVATION_FUNCTION, padding='same'))
+		#Compilación del modelo
+		model.compile(optimizer=SP.OPTIMIZER, loss=SP.LOSS_FUNCTION)
+		elapsed_seconds = int(round(time.time() * 1000)) - start_time
 		print("Model building took", elapsed_seconds, "(miliseconds)")
 		model.summary()
 		return model

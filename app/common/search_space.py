@@ -6,16 +6,19 @@ import numpy as np
 from dataclasses_json import DataClassJsonMixin
 from typing import List
 from app.common.socketCommunication import *
+from app.common.tools import *
 
 class SearchSpaceType(Enum):
-	IMAGE = 'image'
-	REGRESSION = 'regression'
-	TIME_SERIES = 'time_series'
+    IMAGE = 'image'
+    REGRESSION = 'regression'
+    TIME_SERIES = 'time_series'
+    IMAGE_TIME_SERIES = 'image_time_series'
 
 class DatasetType(Enum):
     IMAGE = 1
     REGRESSION = 2
     TIME_SERIES = 3
+    IMAGE_TIME_SERIES = 4
 
 @dataclass(frozen=True)
 class SearchSpace:
@@ -167,6 +170,32 @@ class TimeSeriesModelSearchSpace(SearchSpace):
     def get_hash(cls) -> str:
         return hash(cls())
 
+class ImageTimeSeriesModelSearchSpace(SearchSpace):
+    #BASE_ARCHITECTURE: tuple = field(default=(''))
+    CODIFIER_LAYERS_N_MIN: int = 1
+    CODIFIER_LAYERS_N_MAX: int = 5
+
+    CODIFIER_UNITS_MIN: int = 2
+    CODIFIER_UNITS_MAX: int = 128
+
+    CONV_KERNEL: tuple = (3,5,7)
+
+    KERNEL_X: tuple = ()
+    KERNEL_Y: tuple = ()
+
+    def set_divisions(vals_x, vals_y):
+        KERNEL_X = vals_x
+        KERNEL_Y = vals_y
+        return
+
+    @staticmethod
+    def get_type() -> SearchSpaceType:
+        return searchSpaceType.IMAGE_TIME_SERIES
+    
+    @classmethod
+    def get_hash(cls) -> str:
+        return hash(cls())
+
 
 #Architecture parameters part
 #Clase capaz de almacenar la información de los parámetros de un modelo a manera de datos.
@@ -280,6 +309,26 @@ class TimeSeriesModelArchitectureParameters(ModelArchitectureParameters):
             classifier_dropouts=list(),
             classifier_layers_units=list(),
             learning_rate=0.0
+        )
+
+@dataclass
+class ImageTimeSeriesModelArchitectureParameters(ModelArchitectureParameters):
+    codifier_layers_n: int
+
+    codifier_units = List[int]
+    conv_kernels = List[int]
+
+    kernels_x: List[int]
+    kernels_y: List[int]
+
+    @staticmethod
+    def new():
+        return ImageTimeSeriesModelArchitectureParameters(
+            codifier_layers_n = 0,
+            conv_units = list(),
+            conv_kernels = list(),
+            kernels_x = list(),
+            kernels_y = list()
         )
 
 #Model architectures factories part
@@ -548,6 +597,40 @@ class TimeSeriesModelArchitectureFactory(ModelArchitectureFactory):
             units = units * self.sp.CLASSIFIER_LAYERS_BASE_MULTIPLIER
             model_params.classifier_layers_units.append(units)
 
+        return model_params
+
+    def get_search_space(self) -> SearchSpace:
+        return self.sp
+
+class ImageTimeSeriesModelArchitectureFactory(ModelArchitectureFactory):
+    sp = ImageTimeSeriesModelSearchSpace()
+
+    def generate_model_params(self, recommender: optuna.Trial, input_dim: tuple):
+        self.sp.set_divisions(divisors_tuple(input_dim[0]), divisors_tuple(input_dim[1]))
+        model_params: ImageTimeSeriesModelArchitectureParameters = ImageTimeSeriesModelArchitectureParameters.new()
+
+        model_params.codifier_layers_n = recommender.suggest_int('CODIFIER_LAYERS_N', self.sp.CODIFIER_LAYERS_N_MIN, self.sp.CODIFIER_LAYERS_N_MAX)
+        for n in range(0, model_params.codifier_layers_n):
+            tag = 'KERNELS_X_'+str(n)
+            tag_2 = 'KERNELS_Y_'+str(n)
+            actual_kernel_x = recommender.suggest_categorical(tag, self.sp.KERNEL_X)
+            actual_kernel_y = recommender.suggest_categorical(tag_2, self.sp.KERNEL_Y)
+            new_kernel_x = divisors_tuple(actual_kernel_x)
+            new_kernel_y = divisors_tuple(actual_kernel_y)
+            if len(new_kernel_x) != 0:
+                if len(new_kernel_y) != 0:
+                    self.sp.set_divisors(new_kernel_x, new_kernel_y)
+                else:
+                    self.sp.set_divisors(new_kernel_x, self.sp.KERNEL_Y)
+            elif len(new_kernel_y) != 0:
+                self.set_divisors(self.sp.KERNEL_X, new_kernel_y)
+            model_params.kernels_x.append(actual_kernel_x)
+            model_params.kernels_y.append(actual_kernel_y)
+            model_params.codifier_units.append(recommender.suggest_int('CODIFIER_UNITS_N', self.sp.CODIFIER_UNITS_MIN, self.sp.CODIFIER_UNITS_MAX))
+            tag_3 = 'CONV_FILTER_SIZE_' + str(n)
+            kernel_size = recommender.suggest_categorical(tag_3, self.sp.CONV_KERNEL)
+            model_params.conv_kernels.append((kernel_size, kernel_size))
+        print(recommender.params)
         return model_params
 
     def get_search_space(self) -> SearchSpace:

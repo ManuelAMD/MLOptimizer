@@ -29,24 +29,29 @@ class SystemParameters:
     #Dataset parameters
     #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans, emnist
     #DATASET_NAME: str = 'mnist'
-    DATASET_NAME: str = 'corrales_07_zo02'
-    #Types: image = 1, regression = 2, time-series = 3.
-    DATASET_TYPE: int = 3
-    DATASET_BATCH_SIZE: int = 512
+    DATASET_NAME: str = 'DroughtMonitor'
+    #Types: image = 1, regression = 2, time-series = 3, image-time-series = 4.
+    DATASET_TYPE: int = 4
+    DATASET_BATCH_SIZE: int = 16
     DATASET_VALIDATION_SPLIT: float = 0.2
-   #empty for tensorflowDatasets
+    #empty for tensorflowDatasets
     #DATASET_INFO_ROUTE: str = '' 
     #DATASET_SHAPE: tuple = (28,28,1)
-    DATASET_SHAPE: tuple = (1,3)
+    #DATASET_SHAPE: tuple = (1,3)
     #DATASET_SHAPE: tuple = (8)
     #Image dataset parameters
     DATASET_CLASSES: int = 10
+    #Image color set: No modification = 1, grayscale = 2, monocromathic = 3 (the shape must be the original, internally the system will take care of the dataset)
+    DATASET_COLOR_SCALE: int = 1
     #Regression dataset parameters
     DATASET_FEATURES: int = 8
     DATASET_LABELS: int = 1
     #Time Series dataset parameters
     DATASET_WINDOW_SIZE: int = 100
     DATASET_DATA_SIZE: int = 3
+    #Image time series dataset parameters
+    #DATASET_COLOR_SCALE: int = 3
+    DATASET_SHAPE: tuple = (480,640,3)
 
 
     #AutoML parameters

@@ -72,6 +72,14 @@ class InitNodes:
 				SP.DATASET_DATA_SIZE, 
 				SP.DATASET_BATCH_SIZE, 
 				SP.DATASET_VALIDATION_SPLIT)
+		elif SP.DATASET_TYPE == 4:
+			return ImageTimeSeriesBenchmarkDataset(
+				SP.DATASET_NAME, 
+				SP.DATASET_SHAPE, 
+				SP.DATASET_CLASSES, 
+				SP.DATASET_BATCH_SIZE, 
+				SP.DATASET_VALIDATION_SPLIT,
+				SP.DATASET_COLOR_SCALE)
 		else:
 			print("Please enter a valid dataset type")
 			return

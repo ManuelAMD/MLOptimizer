@@ -21,9 +21,9 @@ def reproduce_Architecture(f):
     request = ModelTrainingRequest.from_dict(model, 3)
     print(request)
     m = Model(request, None)
-    m.build_model((1,1),1)
+    m.build_model((1,3),3)
     return None
 
-filename = 'Architecture Results/monthly-beer-production-in-austr-20210617-162711'
+filename = 'Architecture Results/corrales_07_zo02-20210628-225840'
 f = open(filename)
 reproduce_Architecture(f)

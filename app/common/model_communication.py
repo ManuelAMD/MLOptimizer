@@ -27,6 +27,8 @@ class ModelTrainingRequest:
 			_architecture = RegressionModelArchitectureParameters.from_dict(body_dict['architecture'])
 		elif model_arch == 3:
 			_architecture = TimeSeriesModelArchitectureParameters.from_dict(body_dict['architecture'])
+		elif model_arch == 4:
+			_architecture = ImageTimeSeriesModelArchitectureParameters.from_dict(body_dict['architecture'])
 		_epochs = body_dict['epochs']
 		_early_stopping_patience = body_dict['early_stopping_patience']
 		_is_partial_training = body_dict['is_partial_training']
