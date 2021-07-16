@@ -14,10 +14,10 @@ from app.common.dataset import Dataset
 from app.common.model_communication import *
 from system_parameters import SystemParameters as SP
 from app.common.Callbacks import EndEpoch
-gpu_devices = tf.config.experimental.list_physical_devices("GPU")
-print(gpu_devices)
-for device in gpu_devices:
-	tf.config.experimental.set_memory_growth(device, True)
+#gpu_devices = tf.config.experimental.list_physical_devices("GPU")
+#print(gpu_devices)
+#for device in gpu_devices:
+#	tf.config.experimental.set_memory_growth(device, True)
 #physical_devices = tf.config.list_physical_devices('GPU')
 #tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
@@ -122,14 +122,25 @@ class Model:
 			plot_model(model, to_file=SP.DATA_ROUTE+save_path+".png", show_shapes=True, show_layer_names=False)
 		else:
 			print("The model can't be saved")
-		history = model.fit(
-			train,
-			epochs=self.epochs,
-			steps_per_epoch=training_steps,
-			callbacks=callbacks,
-			validation_data = validation,
-			validation_steps=validation_steps,
-		)
+		if self.search_space_type == SearchSpaceType.IMAGE_TIME_SERIES:
+			history = model.fit(
+				train,
+				epochs=self.epochs,
+				steps_per_epoch=training_steps,
+				callbacks=callbacks,
+				validation_data = validation,
+				validation_steps=validation_steps,
+				shuffle=True
+			)
+		else:
+			history = model.fit(
+				train,
+				epochs=self.epochs,
+				steps_per_epoch=training_steps,
+				callbacks=callbacks,
+				validation_data = validation,
+				validation_steps=validation_steps,
+			)
 		did_finish_epochs = self._did_finish_epochs(history, self.epochs)
 		if self.search_space_type == SearchSpaceType.IMAGE:
 			loss, training_val = model.evaluate(test, verbose=0)
@@ -288,16 +299,18 @@ class Model:
 		model = keras.Sequential()
 		model.add(keras.layers.Input(input_shape))
 		for i in range(model_parameters.codifier_layers_n):
-			model.add(keras.layers.Conv2D(model_parameters.codifier_units[i], model_parameters.conv_kernels[i], padding='same', activation=SP.LAYERS_ACTIVATION_FUNCTION))
+			model.add(keras.layers.Conv2D(model_parameters.codifier_units[i], model_parameters.conv_kernels[i], padding=SP.PADDING, activation=SP.LAYERS_ACTIVATION_FUNCTION))
 			model.add(keras.layers.MaxPooling2D((model_parameters.kernels_x[i], model_parameters.kernels_y[i])))
 		for i in reversed(range(model_parameters.codifier_layers_n)):
-			model.add(keras.layers.Conv2D(model_parameters.codifier_units[i], model_parameters.conv_kernels[i], padding='same', activation=SP.LAYERS_ACTIVATION_FUNCTION))
+			model.add(keras.layers.Conv2D(model_parameters.codifier_units[i], model_parameters.conv_kernels[i], padding=SP.PADDING, activation=SP.LAYERS_ACTIVATION_FUNCTION))
 			model.add(keras.layers.UpSampling2D((model_parameters.kernels_x[i], model_parameters.kernels_y[i])))
+		print(model_parameters)
+		#print(model.summary())
 		#Output Layer
-		model.add(keras.layers.Conv2D(input_shape, (3,3), activation=SP.LAYERS_ACTIVATION_FUNCTION, padding='same'))
+		model.add(keras.layers.Conv2D(input_shape[2], (3,3), activation=SP.OUTPUT_ACTIVATION_FUNCTION, padding=SP.PADDING))
 		#Compilación del modelo
 		model.compile(optimizer=SP.OPTIMIZER, loss=SP.LOSS_FUNCTION)
 		elapsed_seconds = int(round(time.time() * 1000)) - start_time
 		print("Model building took", elapsed_seconds, "(miliseconds)")
-		model.summary()
+		print(model.summary())
 		return model

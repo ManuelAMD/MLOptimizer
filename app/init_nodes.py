@@ -1,6 +1,6 @@
 from app.common.dataset import *
 import time
-from app.common.search_space import ModelArchitectureFactory, ImageModelArchitectureFactory, RegressionModelArchitectureFactory, TimeSeriesModelArchitectureFactory
+from app.common.search_space import ModelArchitectureFactory, ImageModelArchitectureFactory, RegressionModelArchitectureFactory, TimeSeriesModelArchitectureFactory, ImageTimeSeriesModelArchitectureFactory
 from system_parameters import SystemParameters as SP
 from flask_socketio import SocketIO, send
 from app.common.socketCommunication import *
@@ -45,6 +45,8 @@ class InitNodes:
 			return RegressionModelArchitectureFactory()
 		elif SP.DATASET_TYPE == 3:
 			return TimeSeriesModelArchitectureFactory()
+		elif SP.DATASET_TYPE == 4:
+			return ImageTimeSeriesModelArchitectureFactory()
 		else:
 			print("Please enter a valid dataset type")
 			return

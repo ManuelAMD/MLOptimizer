@@ -10,7 +10,8 @@
 	"total_num_examples":1079,
 	"splits":{
 		"test":150,
-		"train":929
+		"train":744,
+		"validation":185
 	},
 	"supervised_keys":["image", "label"],
 	"citation":"",

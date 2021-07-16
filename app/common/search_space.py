@@ -172,25 +172,29 @@ class TimeSeriesModelSearchSpace(SearchSpace):
 
 class ImageTimeSeriesModelSearchSpace(SearchSpace):
     #BASE_ARCHITECTURE: tuple = field(default=(''))
-    CODIFIER_LAYERS_N_MIN: int = 1
-    CODIFIER_LAYERS_N_MAX: int = 5
+    CODIFIER_LAYERS_N_MIN: int = 2
+    CODIFIER_LAYERS_N_MAX: int = 6
 
     CODIFIER_UNITS_MIN: int = 2
-    CODIFIER_UNITS_MAX: int = 128
+    CODIFIER_UNITS_MAX: int = 32
 
     CONV_KERNEL: tuple = (3,5,7)
 
-    KERNEL_X: tuple = ()
-    KERNEL_Y: tuple = ()
+    KERNEL_X_MIN: int = 0
+    KERNEL_X_MAX: int = 16
+    KERNEL_Y_MIN: int = 0
+    KERNEL_Y_MAX: int = 16
 
-    def set_divisions(vals_x, vals_y):
-        KERNEL_X = vals_x
-        KERNEL_Y = vals_y
+    def set_kernel_values(self, val_x, val_y):
+        self.KERNEL_X_MIN = 0
+        self.KERNEL_X_MAX = len(divisors(val_x))
+        self.KERNEL_Y_MIN = 0
+        self.KERNEL_Y_MAX = len(divisors(val_x))
         return
 
     @staticmethod
     def get_type() -> SearchSpaceType:
-        return searchSpaceType.IMAGE_TIME_SERIES
+        return SearchSpaceType.IMAGE_TIME_SERIES
     
     @classmethod
     def get_hash(cls) -> str:
@@ -315,8 +319,8 @@ class TimeSeriesModelArchitectureParameters(ModelArchitectureParameters):
 class ImageTimeSeriesModelArchitectureParameters(ModelArchitectureParameters):
     codifier_layers_n: int
 
-    codifier_units = List[int]
-    conv_kernels = List[int]
+    codifier_units: List[int]
+    conv_kernels: List[int]
 
     kernels_x: List[int]
     kernels_y: List[int]
@@ -325,7 +329,7 @@ class ImageTimeSeriesModelArchitectureParameters(ModelArchitectureParameters):
     def new():
         return ImageTimeSeriesModelArchitectureParameters(
             codifier_layers_n = 0,
-            conv_units = list(),
+            codifier_units = list(),
             conv_kernels = list(),
             kernels_x = list(),
             kernels_y = list()
@@ -606,27 +610,48 @@ class ImageTimeSeriesModelArchitectureFactory(ModelArchitectureFactory):
     sp = ImageTimeSeriesModelSearchSpace()
 
     def generate_model_params(self, recommender: optuna.Trial, input_dim: tuple):
-        self.sp.set_divisions(divisors_tuple(input_dim[0]), divisors_tuple(input_dim[1]))
+        if self.sp.KERNEL_X_MIN == 0:
+            self.sp.set_kernel_values(input_dim[0], input_dim[1])
+        x = input_dim[0]
+        y = input_dim[1]
+        div_x = divisors(x)
+        div_x = div_x[:int(len(div_x))]
+        div_y = divisors(y)
+        div_y = div_y[:int(len(div_y))]
+        #self.sp.set_divisors(div_x, div_y)
         model_params: ImageTimeSeriesModelArchitectureParameters = ImageTimeSeriesModelArchitectureParameters.new()
 
         model_params.codifier_layers_n = recommender.suggest_int('CODIFIER_LAYERS_N', self.sp.CODIFIER_LAYERS_N_MIN, self.sp.CODIFIER_LAYERS_N_MAX)
         for n in range(0, model_params.codifier_layers_n):
             tag = 'KERNELS_X_'+str(n)
             tag_2 = 'KERNELS_Y_'+str(n)
-            actual_kernel_x = recommender.suggest_categorical(tag, self.sp.KERNEL_X)
-            actual_kernel_y = recommender.suggest_categorical(tag_2, self.sp.KERNEL_Y)
-            new_kernel_x = divisors_tuple(actual_kernel_x)
-            new_kernel_y = divisors_tuple(actual_kernel_y)
-            if len(new_kernel_x) != 0:
-                if len(new_kernel_y) != 0:
-                    self.sp.set_divisors(new_kernel_x, new_kernel_y)
-                else:
-                    self.sp.set_divisors(new_kernel_x, self.sp.KERNEL_Y)
-            elif len(new_kernel_y) != 0:
-                self.set_divisors(self.sp.KERNEL_X, new_kernel_y)
-            model_params.kernels_x.append(actual_kernel_x)
-            model_params.kernels_y.append(actual_kernel_y)
-            model_params.codifier_units.append(recommender.suggest_int('CODIFIER_UNITS_N', self.sp.CODIFIER_UNITS_MIN, self.sp.CODIFIER_UNITS_MAX))
+            #-1 for list index
+            pos_x = recommender.suggest_int(tag, self.sp.KERNEL_X_MIN, self.sp.KERNEL_X_MAX) - 1
+            pos_y = recommender.suggest_int(tag_2, self.sp.KERNEL_Y_MIN, self.sp.KERNEL_Y_MAX) - 1
+            #actual_kernel_x = 
+            #actual_kernel_y = 
+            tam_x = len(div_x)
+            while pos_x >= tam_x:
+                pos_x -= tam_x
+            tam_y = len(div_y)
+            while pos_y >= tam_y:
+                pos_y -= tam_y
+            #print("Posición actual x", pos_x, "tam:", tam_x,"Posición actual y", pos_y, "tam_y:",tam_y)
+            x = x / div_x[pos_x]
+            y = y / div_y[pos_y]
+            new_kernel_x = divisors(x)
+            new_kernel_y = divisors(y)
+            if len(new_kernel_x) == 0:
+                print("kernel_x vacio", new_kernel_x)
+                new_kernel_x = [1]
+            if len(new_kernel_y) == 0:
+                print("kernel_y vacio", new_kernel_y)
+                new_kernel_y = [1]
+            print("Se actualizan los kernels", new_kernel_x, new_kernel_y)
+            model_params.kernels_x.append(div_x[pos_x])
+            model_params.kernels_y.append(div_y[pos_y])
+            div_x, div_y = new_kernel_x[:int(len(new_kernel_x)/2)], new_kernel_y[:int(len(new_kernel_y)/2)]
+            model_params.codifier_units.append(recommender.suggest_int('CODIFIER_UNITS_'+str(n), self.sp.CODIFIER_UNITS_MIN, self.sp.CODIFIER_UNITS_MAX))
             tag_3 = 'CONV_FILTER_SIZE_' + str(n)
             kernel_size = recommender.suggest_categorical(tag_3, self.sp.CONV_KERNEL)
             model_params.conv_kernels.append((kernel_size, kernel_size))

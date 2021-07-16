@@ -205,7 +205,7 @@ class OptimizationStrategy(object):
 			elif self.phase == Phase.DEEP_TRAINING:
 				return self._report_model_response_hof_classification(model_training_response)
 
-		if self.search_space_type == SearchSpaceType.REGRESSION or self.search_space_type == SearchSpaceType.TIME_SERIES:
+		if self.search_space_type == SearchSpaceType.REGRESSION or self.search_space_type == SearchSpaceType.TIME_SERIES or self.search_space_type == SearchSpaceType.IMAGE_TIME_SERIES:
 			if self.phase == Phase.EXPLORATION:
 				return self._report_model_response_exploration_regression(model_training_response)
 			elif self.phase == Phase.DEEP_TRAINING:

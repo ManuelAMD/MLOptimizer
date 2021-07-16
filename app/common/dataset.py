@@ -340,6 +340,7 @@ class ImageTimeSeriesBenchmarkDataset(Dataset):
 			self.shape = (shape[0], shape[1], 1)
 		else:
 			self.shape = shape
+		self.color_mode = color_mode
 		self.class_count = class_count
 
 	def load(self, init_route=None):
@@ -366,12 +367,21 @@ class ImageTimeSeriesBenchmarkDataset(Dataset):
 				with open(route+'info.json') as jsonfile:
 					info = json.load(jsonfile)
 				#get all images from folders train and test
-				datagen = ImageDataGenerator()
-				self.train_original = datagen.flow_from_directory(route+'/Train/', class_mode='input')
-				self.validation = datagen.flow_from_directory(route+'/Validation/', class_mode='input')
-				self.test = datagen.flow_from_directory(route+'/Test/', class_mode='input')
-				batchX, batchy = train_it.next()
-				print('Batch shape=%s, min=%.3f, max=%.3f' % (batchX.shape, batchX.min(), batchX.max()))
+				datagen_train = ImageDataGenerator(rescale=1./255, data_format='channels_last')
+				datagen_validation = ImageDataGenerator(rescale=1./255, data_format='channels_last')
+				datagen_test = ImageDataGenerator(rescale=1./255, data_format='channels_last')
+				if self.color_mode == 1:
+					color = 'rgb'
+				else:
+					color = 'grayscale'
+				self.train_original = datagen_train.flow_from_directory(route+'/Train/', batch_size=self.batch_size, target_size=(self.shape[0], self.shape[1]), color_mode=color, class_mode='input')
+				self.validation = datagen_validation.flow_from_directory(route+'/Validation/', batch_size=self.batch_size, target_size=(self.shape[0], self.shape[1]), color_mode=color, class_mode='input')
+				self.test = datagen_test.flow_from_directory(route+'/Test/', batch_size=self.batch_size, target_size=(self.shape[0], self.shape[1]), color_mode=color, class_mode='input')
+				self.train_split_count = info['splits']['train']
+				self.validation_split_count = info['splits']['validation']
+				print("HEYYYY!!!!", self.train_original.data_format)
+				#batchX, batchy = self.train_original.next()
+				#print('Batch shape=%s, min=%.3f, max=%.3f' % (batchX.shape, batchX.min(), batchX.max()))
 				"""train = []
 				for i in glob.glob(route+'/Train'+'/*.png', recursive=True):
 					if self.color_mode != 1:
@@ -404,20 +414,20 @@ class ImageTimeSeriesBenchmarkDataset(Dataset):
 				raise
 
 	def get_train_data(self, use_augmentation: False):
-		train_data = None
-		if use_augmentation:
-			train_data = self.train.map(self._scale).cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
-		else:
-			train_data = self.train_original.map(self._scale).cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
-		return train_data
+		#train_data = None
+		#if use_augmentation:
+		#	train_data = self.train.map(self._scale).cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
+		#else:
+		#	train_data = self.train_original.map(self._scale).cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
+		return self.train_original
 
 	def get_validation_data(self):
-		validation_data = self.validation.map(self._scale).cache().batch(self.batch_size)
-		return validation_data
+		#validation_data = self.validation.map(self._scale).cache().batch(self.batch_size)
+		return self.validation
 
 	def get_test_data(self):
-		test_data = self.test.map(self._scale).cache().batch(self.batch_size)
-		return test_data
+		#test_data = self.test.map(self._scale).cache().batch(self.batch_size)
+		return self.test
 
 	def get_training_steps(self, use_augmentation: False) -> int:
 		if use_augmentation:

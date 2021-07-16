@@ -32,7 +32,7 @@ class SystemParameters:
     DATASET_NAME: str = 'DroughtMonitor'
     #Types: image = 1, regression = 2, time-series = 3, image-time-series = 4.
     DATASET_TYPE: int = 4
-    DATASET_BATCH_SIZE: int = 16
+    DATASET_BATCH_SIZE: int = 8
     DATASET_VALIDATION_SPLIT: float = 0.2
     #empty for tensorflowDatasets
     #DATASET_INFO_ROUTE: str = '' 
@@ -42,7 +42,7 @@ class SystemParameters:
     #Image dataset parameters
     DATASET_CLASSES: int = 10
     #Image color set: No modification = 1, grayscale = 2, monocromathic = 3 (the shape must be the original, internally the system will take care of the dataset)
-    DATASET_COLOR_SCALE: int = 1
+    #DATASET_COLOR_SCALE: int = 1
     #Regression dataset parameters
     DATASET_FEATURES: int = 8
     DATASET_LABELS: int = 1
@@ -50,8 +50,8 @@ class SystemParameters:
     DATASET_WINDOW_SIZE: int = 100
     DATASET_DATA_SIZE: int = 3
     #Image time series dataset parameters
-    #DATASET_COLOR_SCALE: int = 3
-    DATASET_SHAPE: tuple = (480,640,3)
+    DATASET_COLOR_SCALE: int = 3
+    DATASET_SHAPE: tuple = (480,640,1)
 
 
     #AutoML parameters
@@ -59,11 +59,11 @@ class SystemParameters:
     TRAIN_GPU: bool = True
     TRIALS = 10
     #Exploration parameters 
-    EXPLORATION_SIZE: int = 500
+    EXPLORATION_SIZE: int = 200
     EXPLORATION_EPOCHS: int = 10
     EXPLORATION_EARLY_STOPPING_PATIENCE: int = 3
     #Hall of fame parameters
-    HALL_OF_FAME_SIZE: int = 10
+    HALL_OF_FAME_SIZE: int = 5
     HALL_OF_FAME_EPOCHS: int = 300
     HOF_EARLY_STOPPING_PATIENCE: int = 15
 
@@ -71,19 +71,20 @@ class SystemParameters:
     #Model parameters
     DTYPE: str = 'float32'
     OPTIMIZER: str = 'adam'
-    #LAYERS_ACTIVATION_FUNCTION: str = 'relu'
-    #OUTPUT_ACTIVATION_FUNCTION: str = 'softmax'
-    #KERNEL_INITIALIZER: str = 'he_uniform'
-    #LOSS_FUNCTION: str = 'sparse_categorical_crossentropy'
+    LAYERS_ACTIVATION_FUNCTION: str = 'relu'
+    OUTPUT_ACTIVATION_FUNCTION: str = 'sigmoid'
+    KERNEL_INITIALIZER: str = 'normal'
+    LOSS_FUNCTION: str = 'binary_crossentropy'
+    PADDING: str = 'same'
 
     #Image Classification
     #LOSS_FUNCTION: str = 'sparse_categorical_crossentropy'
-    METRICS = ['accuracy']
+    #METRICS = ['accuracy']
     #LAYERS_ACTIVATION_FUNCTION: str = 'relu'
     #OUTPUT_ACTIVATION_FUNCTION: str = 'softmax'
-    PADDING: str = 'same'
+    #PADDING: str = 'same'
     #KERNEL_INITIALIZER: str = 'he_uniform'
-    WEIGHT_DECAY = 1e-4
+    #WEIGHT_DECAY = 1e-4
 
     #Regression models
     #LOSS_FUNCTION: str = 'mse'
@@ -92,8 +93,8 @@ class SystemParameters:
     #KERNEL_INITIALIZER: str = 'normal'
 
     #Time-series models
-    LOSS_FUNCTION: str = 'mse'
-    LSTM_ACTIVATION_FUNCTION: str = 'tanh'
-    LAYERS_ACTIVATION_FUNCTION: str = 'tanh'
-    OUTPUT_ACTIVATION_FUNCTION: str = 'tanh'
-    KERNEL_INITIALIZER: str = 'normal'
+    #LOSS_FUNCTION: str = 'mse'
+    #LSTM_ACTIVATION_FUNCTION: str = 'tanh'
+    #LAYERS_ACTIVATION_FUNCTION: str = 'tanh'
+    #OUTPUT_ACTIVATION_FUNCTION: str = 'tanh'
+    #KERNEL_INITIALIZER: str = 'normal'

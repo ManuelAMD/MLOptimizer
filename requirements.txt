@@ -15,3 +15,4 @@ flask-socketio==4.3.2
 gevent==21.1.2
 pydot==1.4.2
 pydotplus==2.0.2
+pillow==8.3.1

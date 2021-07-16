@@ -81,6 +81,7 @@ class OptimizationJob:
 		model = Model(model_training_request, self.dataset)
 		if not model.is_model_valid():
 			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Model is not valid'})
+			self.generate_model()
 		else:
 			await self._send_model_to_broker(model_training_request)
 			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Sent model to broker'})

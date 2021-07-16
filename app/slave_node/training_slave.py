@@ -87,6 +87,7 @@ class TrainingSlave:
 			with concurrent.futures.ProcessPoolExecutor() as pool:
 				training_val, did_finish_epochs = await self.loop.run_in_executor(pool, self.train_model, info_dict)
 		model_training_response = ModelTrainingResponse(id=model_training_request.id, performance=training_val, finished_epochs=did_finish_epochs)
+		print("KEYYY:", model_training_response) 
 		await self._send_performance_to_broker(model_training_response)
 
 	async def _send_performance_to_broker(self, model_training_response: ModelTrainingResponse):
