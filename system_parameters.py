@@ -30,6 +30,7 @@ class SystemParameters:
     #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans, emnist
     #DATASET_NAME: str = 'mnist'
     DATASET_NAME: str = 'DroughtMonitor'
+    IMAGES_TIME_SERIES_RES_FOLDER: str = 'ResDrought'
     #Types: image = 1, regression = 2, time-series = 3, image-time-series = 4.
     DATASET_TYPE: int = 4
     DATASET_BATCH_SIZE: int = 8
@@ -50,7 +51,7 @@ class SystemParameters:
     DATASET_WINDOW_SIZE: int = 100
     DATASET_DATA_SIZE: int = 3
     #Image time series dataset parameters
-    DATASET_COLOR_SCALE: int = 3
+    DATASET_COLOR_SCALE: int = 2
     DATASET_SHAPE: tuple = (480,640,1)
 
 
@@ -76,6 +77,7 @@ class SystemParameters:
     KERNEL_INITIALIZER: str = 'normal'
     LOSS_FUNCTION: str = 'binary_crossentropy'
     PADDING: str = 'same'
+    PREDICTION_SIZE: int = 10
 
     #Image Classification
     #LOSS_FUNCTION: str = 'sparse_categorical_crossentropy'

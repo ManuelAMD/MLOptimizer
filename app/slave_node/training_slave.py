@@ -68,27 +68,33 @@ class TrainingSlave:
 
 	async def _on_model_params_received(self, model_params):
 		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': "Received model training request"})
-		#print(model_params)
-		self.model_type = int(model_params['training_type'])
-		model_training_request = ModelTrainingRequest.from_dict(model_params, self.model_type)
-		if not self.search_space_hash == model_training_request.search_space_hash:
-			raise Exception("Search space of master is different to this worker's search space")
-		SocketCommunication.decide_print_form(MSGType.RECIEVED_MODEL, {'node':2, 'msg':' New model recieved', 'epochs':model_training_request.epochs})
-		info_dict = {
-			'model_img': SP.MODEL_IMG,
-			'init_route': SP.DATA_ROUTE,
-			'dataset': self.dataset,
-			'model_request': model_training_request,
-			'isSocket': SocketCommunication.isSocket
-		}
-		if SocketCommunication.isSocket:
-			training_val, did_finish_epochs = self.train_model(info_dict)
-		else:
-			with concurrent.futures.ProcessPoolExecutor() as pool:
-				training_val, did_finish_epochs = await self.loop.run_in_executor(pool, self.train_model, info_dict)
-		model_training_response = ModelTrainingResponse(id=model_training_request.id, performance=training_val, finished_epochs=did_finish_epochs)
-		print("KEYYY:", model_training_response) 
-		await self._send_performance_to_broker(model_training_response)
+		try:
+			#Enter if it's a image time series training
+			self.temporal = model_params['temp_file']
+			print(self.temporal)
+			self.perform_image_time_series_training(model_params)
+		except:
+			#print(model_params)
+			self.model_type = int(model_params['training_type'])
+			model_training_request = ModelTrainingRequest.from_dict(model_params, self.model_type)
+			if not self.search_space_hash == model_training_request.search_space_hash:
+				raise Exception("Search space of master is different to this worker's search space")
+			SocketCommunication.decide_print_form(MSGType.RECIEVED_MODEL, {'node':2, 'msg':' New model recieved', 'epochs':model_training_request.epochs})
+			info_dict = {
+				'model_img': SP.MODEL_IMG,
+				'init_route': SP.DATA_ROUTE,
+				'dataset': self.dataset,
+				'model_request': model_training_request,
+				'isSocket': SocketCommunication.isSocket
+			}
+			if SocketCommunication.isSocket:
+				training_val, did_finish_epochs = self.train_model(info_dict)
+			else:
+				with concurrent.futures.ProcessPoolExecutor() as pool:
+					training_val, did_finish_epochs = await self.loop.run_in_executor(pool, self.train_model, info_dict)
+			model_training_response = ModelTrainingResponse(id=model_training_request.id, performance=training_val, finished_epochs=did_finish_epochs)
+			print("KEYYY:", model_training_response) 
+			await self._send_performance_to_broker(model_training_response)
 
 	async def _send_performance_to_broker(self, model_training_response: ModelTrainingResponse):
 		print(model_training_response)

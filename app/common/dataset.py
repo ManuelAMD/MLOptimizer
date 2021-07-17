@@ -382,32 +382,6 @@ class ImageTimeSeriesBenchmarkDataset(Dataset):
 				print("HEYYYY!!!!", self.train_original.data_format)
 				#batchX, batchy = self.train_original.next()
 				#print('Batch shape=%s, min=%.3f, max=%.3f' % (batchX.shape, batchX.min(), batchX.max()))
-				"""train = []
-				for i in glob.glob(route+'/Train'+'/*.png', recursive=True):
-					if self.color_mode != 1:
-						train.append(cv2.imread(i, ))
-					train.append(cv2.imread(i))
-				test = []
-				for i in glob.glob(route+'/Test'+'/*.png', recursive=True):
-					test.append(cv2.imread(i))
-
-				self.train_split_count = int(info['splits']['train']*train_split_float)
-				self.validation_split_count = int(info['splits']['train']*self.validation_split_float)
-				#data_col = info['features']['date']+info['features']['value']-1
-				data_col = info['features']['value']-1
-				all_data = np.array(pd.read_csv(route+'.csv'))
-				all_data = all_data[:, data_col:]
-				#Normalizar la información.
-				all_data, self.ranges = normalization(all_data)
-				print(all_data.shape)
-				self.train_original = all_data[:self.train_split_count]
-				print(self.train_original.shape)
-				self.validation = all_data[self.train_split_count : self.train_split_count + self.validation_split_count]
-				self.test = all_data[-info['splits']['test']:]
-				print(self.train_original)
-				self.train_original = self.time_series_partition(self.train_original, self.window_size)
-				self.validation = self.time_series_partition(self.validation, self.window_size)
-				self.test = self.time_series_partition(self.test, self.window_size)"""
 			except:
 				#InitNodes.decide_print_form(MSGType.MASTER_ERROR, {'node': 1, 'msg': 'Somethings went wrong trying to load the dataset, please check the parameters and info'})
 				print('Somethings went wrong trying to load the Image dataset, please check the parameters and info')
