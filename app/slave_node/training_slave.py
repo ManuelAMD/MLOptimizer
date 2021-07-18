@@ -1,7 +1,11 @@
 import asyncio
 import time
+import json
+import numpy as np
+import csv
 import concurrent
 import logging
+import datetime
 from dataclasses import asdict
 import aio_pika
 import pika
@@ -127,7 +131,40 @@ class TrainingSlave:
 				model.save(self.temporal+'/'+str(i+init_count)+'.h5')
 			tf.keras.backend.clear_session()
 			cont += 1
-		pass
+			if cont == cant:
+				print(cant, 'models has been processed on the GPU init:', init_count)
+				cant += 50
+		print('training fails:', fails)
+		print('Retrain bad models')
+		for bad in info:
+			lim = limit
+			fails = 0
+			band = False
+			models = []
+			index = bad[0]
+			x_train, y_train, x_validation, y_validation = self.generate_dataset(index-init_count)
+			while True:
+				model, history = self.train_one_model(x_train, y_train, x_validation, y_validation, SP.IMAGES_TIME_SERIES_EPOCHS, batch_size=SP.IMAGES_TIME_SERIES_BATCH_SIZE, early_patience=SP.IMAGES_TIME_SERIES_EARLY)
+				models.append([model, history])
+				for m in models:
+					if m[1].history['val_loss'][-1] > limit:
+						fails += 1
+						lim += 0.01
+						continue
+					band = True
+					print('The model', index, 'tries to get the enough scores for', fails, 'times and get a limit of', lim)
+					bad.append(m[1].history['loss'][-1])
+					bad.append(m[1].history['val_loss'][-1])
+					m[0].save(self.temporal+'/'+str(index)+'.h5')
+					break
+				if band:
+					break
+		actual_time = datetime.datetime.now()
+		with open('image_time_series_csv/bad_trainings-'+str(init_count)+'-'+actual_time.strftime("%Y%m%d-%H%M%S")+'.csv', 'w') as f:
+			write = csv.writer(f)
+			write.writerow(fields)
+			write.writerows(info)
+		return True
 
 	async def train_one_model(self, x_train, y_train, x_validation, y_validation, epochs, batch_size=64, early_patience=5, restore_weights=True):
 		shape = (int(x_train.shape[1]), int(x_train.shape[2]))
