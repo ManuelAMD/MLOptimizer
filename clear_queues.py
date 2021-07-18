@@ -1,11 +1,11 @@
 import asyncio
 import aio_pika
-from system_parameters import *
+from system_parameters import SystemParameters as SP
 
 #Clean rabbitMQ queues from the broker.
 async def main(loop):
 	connection = await aio_pika.connect_robust(
-		"amqp://{}:{}@{}/".format(MASTER_USER, MASTER_PASSWORD, MASTER_HOST_URL), loop=loop
+		"amqp://{}:{}@{}/".format(SP.INSTANCE_USER, SP.INSTANCE_PASSWORD, SP.INSTANCE_HOST_URL), loop=loop
 	)
 	queue_names = ["parameters", "results"]
 

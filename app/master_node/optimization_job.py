@@ -5,23 +5,25 @@ from dataclasses import asdict
 import aio_pika
 from app.common.model import Model
 from app.common.model_communication import *
-from app.common.rabbit_connection_params import RabbitConnectionParams, ConnectionType
+from app.common.rabbit_connection_params import RabbitConnectionParams
 from app.common.search_space import *
 from app.master_node.communication.master_rabbitmq_client import *
 from app.master_node.communication.rabbitmq_monitor import *
 from app.master_node.optimization_strategy import OptimizationStrategy, Action, Phase
 from app.common.dataset import * 
-from system_parameters import *
+from system_parameters import SystemParameters as SP
+from app.common.socketCommunication import *
 
 class OptimizationJob:
 
 	def __init__(self, dataset: Dataset, model_architecture_factory: ModelArchitectureFactory):
+		asyncio.set_event_loop(asyncio.new_event_loop())
 		self.loop = asyncio.get_event_loop()
 		self.dataset = dataset
 		self.search_space: ModelArchitectureFactory = model_architecture_factory
-		self.optimization_strategy = OptimizationStrategy(self.search_space, self.dataset, EXPLORATION_SIZE, HALL_OF_FAME_SIZE)
+		self.optimization_strategy = OptimizationStrategy(self.search_space, self.dataset, SP.EXPLORATION_SIZE, SP.HALL_OF_FAME_SIZE)
 		#Creates a connection with a connection types as a parameter
-		rabbit_connection_params = RabbitConnectionParams.new(ConnectionType.MASTER)
+		rabbit_connection_params = RabbitConnectionParams.new()
 		self.rabbitmq_client = MasterRabbitMQClient(rabbit_connection_params, self.loop)
 		self.rabbitmq_monitor = RabbitMQMonitor(rabbit_connection_params)
 
@@ -35,7 +37,7 @@ class OptimizationJob:
 			self.loop.run_until_complete(connection.close())
 
 	async def _run_optimization_startup(self):
-		print('*** Running optimization startup ***')
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': '*** Running optimization startup ***'})
 		await self.rabbitmq_client.prepare_queues()
 		queue_status: QueueStatus = await self.rabbitmq_monitor.get_queue_status()
 		for i in range (0, queue_status.consumer_count + 1):
@@ -47,18 +49,22 @@ class OptimizationJob:
 
 	async def on_model_results(self, response: dict):
 		model_training_response = ModelTrainingResponse.from_dict(response)
-		print('Received response')
-		print(model_training_response)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Received response'})
+		cad = str(model_training_response.id) + '|' + str(model_training_response.performance) + '|' + str(model_training_response.finished_epochs)
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 		action: Action = self.optimization_strategy.report_model_response(model_training_response)
+		SocketCommunication.decide_print_form(MSGType.FINISHED_MODEL, {'node': 1, 'msg': 'Finished a model', 'total': self.optimization_strategy.get_training_total()})
 		if action == Action.GENERATE_MODEL:
 			await self.generate_model()
 		elif action == Action.WAIT:
-			print('Wait for models')
+			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Wait for models'})
 		elif action == Action.START_NEW_PHASE:
-			queue_status: QUEUESTATUS = await self.rabbitmq_monitor.get_queue_status()
+			queue_status: QueueStatus = await self.rabbitmq_monitor.get_queue_status()
+			SocketCommunication.decide_print_form(MSGType.CHANGE_PHASE, {'node': 1, 'msg': 'New phase, deep training'})
 			for i in range(0, queue_status.consumer_count + 1):
 				await self.generate_model()
 		elif action == Action.FINISH:
+			SocketCommunication.decide_print_form(MSGType.FINISHED_TRAINING, {'node': 1, 'msg': 'Finished training'})
 			best_model = self.optimization_strategy.get_best_model()
 			await self._log_results(best_model)
 			model = Model(best_model.model_training_request, self.dataset)
@@ -66,18 +72,18 @@ class OptimizationJob:
 			self.loop.stop()
 
 	async def generate_model(self):
-		print('Generating new model')
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Generating new model'})
 		model_training_request: ModelTrainingRequest = self.optimization_strategy.recommend_model()
 		model = Model(model_training_request, self.dataset)
 		if not model.is_model_valid():
-			print('Model is not valid')
+			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Model is not valid'})
 		else:
 			await self._send_model_to_broker(model_training_request)
-			print('Sent model to broker')
+			SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Sent model to broker'})
 
 	async def _send_model_to_broker(self, model_training_request: ModelTrainingRequest):
 		model_training_request_dict = asdict(model_training_request)
-		print(model_training_request_dict)
+		print("Model training request", model_training_request_dict)
 		await self.rabbitmq_client.publish_model_params(model_training_request_dict)
 
 	async def _log_results(self, best_model):
@@ -101,7 +107,7 @@ class OptimizationJob:
 		f.write(ranges_json)
 		f.close()
 
-		elapsed_seconds = time-time() - self.start_time
+		elapsed_seconds = time.time() - self.start_time
 		elapsed_time = time.strftime('%H:%M:%S', time.gmtime(elapsed_seconds))
 
 		time_text = "\n Optimization took: " + str(elapsed_time) + " (hh:mm:ss) " + str(elapsed_seconds) + " (Seconds) "
@@ -112,8 +118,3 @@ class OptimizationJob:
 		f.close()
 
 		print("\n ********************************************** \n")
-
-if __name__ == "__main__":
-	optimization_job = OptimizationJob()
-	print("Optimization job instantiated")
-	optimization_job.start_optimization(10)
