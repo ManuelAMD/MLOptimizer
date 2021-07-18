@@ -1,4 +1,4 @@
-from app.init_nodes import slave
-from app.common.search_space import *
+from app.init_nodes import InitNodes
 
-slave()
+slaveNode = InitNodes()
+slaveNode.slave()

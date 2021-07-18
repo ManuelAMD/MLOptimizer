@@ -1,5 +1,5 @@
 from sklearn import preprocessing
-import numpy as numpy
+import numpy as np
 from pandas import DataFrame
 import pandas as pd
 
@@ -11,8 +11,8 @@ def normalization(data):
 	for i in range(shape[1]):
 		vals = data[:,i]
 		if isinstance(vals[0], str):
-			vals, relations = stringToNumber(vals)
-			aux = Dataframe(aux)
+			vals, relations = StringToNumber(vals)
+			aux = DataFrame(aux)
 			aux[i] = vals
 			aux = np.array(aux)
 			band = True
@@ -43,7 +43,7 @@ def numberToString(data, relations):
 		new_data = [x if x != number else val for x in new_data]
 	return new_data
 
-def SingleDenormalization(data, range):
+def SingleDenormalization(data, ranges):
 	denorm = preprocessing.minmax_scale(data, feature_range=(ranges[0], ranges[1]))
 	try:
 		int_denorm = denorm.astype(int)
@@ -53,7 +53,7 @@ def SingleDenormalization(data, range):
 	return denorm
 
 def checkNormalization(data, ranges, org):
-	denorm = preprocessing.minmax_scale(data, feature_range(ranges[0], ranges[1]))
+	denorm = preprocessing.minmax_scale(data, feature_range=(ranges[0], ranges[1]))
 	try:
 		int_denorm = denorm.astype(int)
 		denorm = numberToString(int_denorm, ranges[2])

@@ -1,6 +1,7 @@
 from aiohttp import BasicAuth, ClientSession
 from dataclasses import dataclass
 from app.common.rabbit_connection_params import RabbitConnectionParams
+from app.common.socketCommunication import *
 
 @dataclass
 class QueueStatus:
@@ -15,7 +16,7 @@ class RabbitMQMonitor(object):
 		self.auth = BasicAuth(login=self.cp.user, password=self.cp.password)
 
 	async def get_queue_status(self) -> QueueStatus:
-		print("Requesting queue status...")
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Requesting queue status...'})
 		async with ClientSession(auth=self.auth) as session:
 			if self.cp.host_url == 'localhost':
 				url = 'http://localhost:15672/api/queues/%2F/parameters'
@@ -34,6 +35,7 @@ class RabbitMQMonitor(object):
 					consumer_count=consumer_count,
 					message_count=message_count
 				)
-				print("Received queue status")
-				print(queue_status)
+				SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Received queue status'})
+				cad = queue_status.queue_name + '|' + str(queue_status.consumer_count) + '|' + str(queue_status.message_count) 
+				SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
 				return queue_status

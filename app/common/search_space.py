@@ -1,4 +1,3 @@
-from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum
 import abc
@@ -6,6 +5,7 @@ import optuna
 import numpy as np
 from dataclasses_json import DataClassJsonMixin
 from typing import List
+from app.common.socketCommunication import *
 
 class SearchSpaceType(Enum):
 	IMAGE = 'image'
@@ -427,8 +427,9 @@ class ImageModelArchitectureFactory(ModelArchitectureFactory):
         min_result_size = self.sp.INCEPTION_MODULES_INPUT_SIZE_MIN
         max_result_size = self.sp.INCEPTION_MODULES_INPUT_SIZE_MAX
 
-        print("Acceptable size range before Inception modules is ", min_result_size, "to", max_result_size, "px")
-        print("Calculating reduction modules acceptable range...")
+        cad = "Acceptable size range before Inception modules is " + str(min_result_size) + " to " + str(max_result_size) + " px"
+        SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
+        SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': "Calculating reduction modules acceptable range..."})
 
         # Calculate minimum reduction modules for input
         # Given the smallest conv filter size and smallest pooling reduction
@@ -462,9 +463,11 @@ class ImageModelArchitectureFactory(ModelArchitectureFactory):
                 print("Min size after ", modules_n_max, " modules: ", reduced_size)
             else:
                 break
-
         module_range = (modules_n_min, modules_n_max)
-        print("Initial modules number range for input ", input_size, "is", module_range)
+
+        cad = "Initial modules number range for input " + str(input_size) + " is " + str(module_range)
+        SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': cad})
+
         self._inception_stem_blocks_n_range = module_range
 
         return module_range
@@ -487,7 +490,7 @@ class RegressionModelArchitectureFactory(ModelArchitectureFactory):
         return model_params
 
     def _generate_mlp_classifier_layers(self, recommender: optuna.Trial, model_params: RegressionModelArchitectureParameters) -> RegressionModelArchitectureParameters:
-        model_params.classifier_layers_n = recommender.suggest_int('CLASSIFIER_LAYERS_N', self.sp.CLASSIFIER_LAYERS_UNITS_MIN, self.sp.CLASSIFIER_LAYERS_UNITS_MAX)
+        model_params.classifier_layers_n = recommender.suggest_int('CLASSIFIER_LAYERS_N', self.sp.CLASSIFIER_LAYERS_N_MIN, self.sp.CLASSIFIER_LAYERS_N_MAX)
 
         for n in range(0, model_params.classifier_layers_n):
             tag = 'CLASSIFIER_DROPOUTS_'+str(n)
