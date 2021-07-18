@@ -53,6 +53,9 @@ class SystemParameters:
     #Image time series dataset parameters
     DATASET_COLOR_SCALE: int = 2
     DATASET_SHAPE: tuple = (480,640,1)
+    IMAGES_TIME_SERIES_EPOCHS: int = 150
+    IMAGES_TIME_SERIES_BATCH_SIZE: int = 64
+    IMAGES_TIME_SERIES_EARLY: int = 15
 
 
     #AutoML parameters

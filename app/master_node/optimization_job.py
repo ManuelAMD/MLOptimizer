@@ -3,11 +3,13 @@ import time
 import datetime
 import json
 import tempfile
-import shutils
+import shutil
 import os
 from dataclasses import asdict
 import aio_pika
 import tensorflow as tf
+import matplotlib as mat
+import matplotlib.pyplot as plt
 from tensorflow import keras
 from app.common.model import Model
 from app.common.model_communication import *
@@ -98,17 +100,17 @@ class OptimizationJob:
 			self.best_model = self.optimization_strategy.get_best_model()
 			await self._log_results(self.best_model)
 			self.model = Model(self.best_model.model_training_request, self.dataset)
-			model.is_model_valid()
+			self.model.is_model_valid()
 			self.loop.stop()
 
 	def perform_image_time_series_training(self, model, model_info):
-		init_time = datetime.datetime.now()
+		init_train_time = datetime.datetime.now()
 		encoder, decoder, decoder_input = self.get_encoder_decoder(model)
 		train_matrix, val_matrix, test_matrix = self.transform_info(encoder, decoder_input)
 		self.save_info_in_disk(model, encoder, decoder, train_matrix, val_matrix, test_matrix)
-		SocketCommunication().decide_print_form(msgType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data, quantity:'+str(len(train_matrix))})
+		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data, quantity:'+str(len(train_matrix))})
 		mid = int(len(train_matrix)/self.consumers)
-		SocketCommunication().decide_print_form(msgType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data per consumer, quantity:'+str(mid)})
+		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data per consumer, quantity:'+str(mid)})
 		mid2 = int(len(val_matrix)/self.consumers)
 		mid3 = int(len(test_matrix)/self.consumers)
 		jsons = self.create_dictionaries(mid, mid2, mid3, len(train_matrix))
@@ -125,8 +127,8 @@ class OptimizationJob:
 		#self.process_count = 0
 		#while self.stop:
 		#	pass
-		SocketCommunication().decide_print_form(msgType.FINISHED_TRAINING, {'node':1, 'msg': 'Training finished for model'})
-		SocketCommunication().decide_print_form(msgType.FINISHED_TRAINING, {'node':1, 'msg': 'Predicting next elements.'})
+		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Training finished for model'})
+		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Predicting next elements.'})
 		predictions = self.predict_next_elements(self.temporal, test_matrix)
 		decoder = tf.keras.models.load_model(self.temporal+'/decoder.h5')
 		predictions = np.array(predictions)
@@ -136,13 +138,13 @@ class OptimizationJob:
 		finish_train_time = datetime.datetime.now()
 		train_time = finish_train_time - init_train_time
 		model_info_json = json.dumps(asdict(model_info))
-		folder_results = SP.IMAGES_TIME_SERIES_RES_FOLDER+'/train'+init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+model_info_json.performance_2
+		folder_results = SP.IMAGES_TIME_SERIES_RES_FOLDER+'/train'+init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+str(model_info_json.performance_2)
 		try:
 			os.mkdir(folder_results)
 		except OSError():
 			print("Creation of the directory ResDrought/%s failed" %folder_results)
 			print("Saving in the root directory")
-			folder_results = "train"+init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+str(model_stats[i][1])
+			folder_results = "train"+init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+str(model_info_json.performance_2)
 			os.mkdir(folder_results)
 		else:
 			print("Successfully created the directory %s" %folder_results)
