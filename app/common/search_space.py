@@ -176,7 +176,7 @@ class ImageTimeSeriesModelSearchSpace(SearchSpace):
     CODIFIER_LAYERS_N_MAX: int = 6
 
     CODIFIER_UNITS_MIN: int = 2
-    CODIFIER_UNITS_MAX: int = 32
+    CODIFIER_UNITS_MAX: int = 16
 
     CONV_KERNEL: tuple = (3,5,7)
 
@@ -626,16 +626,22 @@ class ImageTimeSeriesModelArchitectureFactory(ModelArchitectureFactory):
             tag = 'KERNELS_X_'+str(n)
             tag_2 = 'KERNELS_Y_'+str(n)
             #-1 for list index
-            pos_x = recommender.suggest_int(tag, self.sp.KERNEL_X_MIN, self.sp.KERNEL_X_MAX) - 1
-            pos_y = recommender.suggest_int(tag_2, self.sp.KERNEL_Y_MIN, self.sp.KERNEL_Y_MAX) - 1
             #actual_kernel_x = 
             #actual_kernel_y = 
             tam_x = len(div_x)
-            while pos_x >= tam_x:
-                pos_x -= tam_x
+            if tam_x == 1:
+                pos_x = 0
+            else:
+                pos_x = recommender.suggest_int(tag, self.sp.KERNEL_X_MIN, self.sp.KERNEL_X_MAX)
+                while pos_x >= tam_x:
+                    pos_x -= tam_x
             tam_y = len(div_y)
-            while pos_y >= tam_y:
-                pos_y -= tam_y
+            if tam_y == 1:
+                pos_y = 0
+            else:
+                pos_y = recommender.suggest_int(tag_2, self.sp.KERNEL_Y_MIN, self.sp.KERNEL_Y_MAX)
+                while pos_y >= tam_y:
+                    pos_y -= tam_y
             #print("Posición actual x", pos_x, "tam:", tam_x,"Posición actual y", pos_y, "tam_y:",tam_y)
             x = x / div_x[pos_x]
             y = y / div_y[pos_y]
@@ -650,7 +656,16 @@ class ImageTimeSeriesModelArchitectureFactory(ModelArchitectureFactory):
             print("Se actualizan los kernels", new_kernel_x, new_kernel_y)
             model_params.kernels_x.append(div_x[pos_x])
             model_params.kernels_y.append(div_y[pos_y])
-            div_x, div_y = new_kernel_x[:int(len(new_kernel_x)/2)], new_kernel_y[:int(len(new_kernel_y)/2)]
+            if len(new_kernel_x) == 1:
+                div_x = new_kernel_x
+            else:
+                div_x = new_kernel_x[:int(len(new_kernel_x)/2)]
+                #div_x = new_kernel_x[:len(new_kernel_x)]
+            if len(new_kernel_y) == 1:
+                div_y = new_kernel_y
+            else:
+                div_y = new_kernel_y[:int(len(new_kernel_y)/2)]
+                #div_y = new_kernel_y[:len(new_kernel_y)]
             model_params.codifier_units.append(recommender.suggest_int('CODIFIER_UNITS_'+str(n), self.sp.CODIFIER_UNITS_MIN, self.sp.CODIFIER_UNITS_MAX))
             tag_3 = 'CONV_FILTER_SIZE_' + str(n)
             kernel_size = recommender.suggest_categorical(tag_3, self.sp.CONV_KERNEL)

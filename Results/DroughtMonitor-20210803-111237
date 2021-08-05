@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 1, "training_type": 4, "experiment_id": "DroughtMonitor-20210803-111237", "architecture": {"codifier_layers_n": 2, "codifier_units": [11, 10], "conv_kernels": [[3, 3], [7, 7]], "kernels_x": [2, 4], "kernels_y": [8, 2]}, "epochs": 300, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "image_time_series", "search_space_hash": 5740354900026072187, "dataset_tag": "DroughtMonitor"}, "performance": 0.016160085797309875, "performance_2": 0.012607425451278687}
+""
+Optimization took: 01:28:17 (hh:mm:ss) 5297.559363365173 (Seconds) 

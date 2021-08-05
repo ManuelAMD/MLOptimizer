@@ -37,6 +37,15 @@ class Model:
 		self.model: tf.keras.Model
 		self.dataset: Dataset = dataset
 
+	def build_model_CPU(self, input_shape: tuple, class_count: int):
+		try:
+			strategy = tf.distribute.OneDeviceStrategy(device='/cpu:0')
+			with strategy.scope():
+				m = self.build_model(input_shape, class_count)
+		except ValueError as e:
+			logging.warning(e)
+		return m
+
 	def build_model(self, input_shape: tuple, class_count: int):
 		if self.search_space_type == SearchSpaceType.IMAGE:
 			return self.build_image_model(self.model_params, input_shape, class_count)
@@ -74,10 +83,10 @@ class Model:
 		else:
 			use_augmentation = False
 		
-		#config = tf.compat.v1.ConfigProto()
-		#config.gpu_options.allow_growth= True
-		#session= tf.compat.v1.Session(config=config)
-
+		config = tf.compat.v1.ConfigProto()
+		config.gpu_options.allow_growth= True
+		session= tf.compat.v1.Session(config=config)
+		
 		input_shape = self.dataset.get_input_shape()
 		class_count = self.dataset.get_classes_count()
 		model = self.build_model(input_shape, class_count)

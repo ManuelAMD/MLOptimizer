@@ -51,7 +51,7 @@ class SystemParameters:
     DATASET_WINDOW_SIZE: int = 100
     DATASET_DATA_SIZE: int = 3
     #Image time series dataset parameters
-    DATASET_COLOR_SCALE: int = 2
+    DATASET_COLOR_SCALE: int = 3
     DATASET_SHAPE: tuple = (480,640,1)
     IMAGES_TIME_SERIES_EPOCHS: int = 150
     IMAGES_TIME_SERIES_BATCH_SIZE: int = 64
@@ -63,11 +63,11 @@ class SystemParameters:
     TRAIN_GPU: bool = True
     TRIALS = 10
     #Exploration parameters 
-    EXPLORATION_SIZE: int = 200
-    EXPLORATION_EPOCHS: int = 10
+    EXPLORATION_SIZE: int = 100
+    EXPLORATION_EPOCHS: int = 15
     EXPLORATION_EARLY_STOPPING_PATIENCE: int = 3
     #Hall of fame parameters
-    HALL_OF_FAME_SIZE: int = 5
+    HALL_OF_FAME_SIZE: int = 3
     HALL_OF_FAME_EPOCHS: int = 300
     HOF_EARLY_STOPPING_PATIENCE: int = 15
 

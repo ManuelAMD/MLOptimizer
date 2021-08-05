@@ -10,6 +10,7 @@ import aio_pika
 import tensorflow as tf
 import matplotlib as mat
 import matplotlib.pyplot as plt
+from PIL import Image
 from tensorflow import keras
 from app.common.model import Model
 from app.common.model_communication import *
@@ -21,6 +22,7 @@ from app.master_node.optimization_strategy import OptimizationStrategy, Action, 
 from app.common.dataset import * 
 from system_parameters import SystemParameters as SP
 from app.common.socketCommunication import *
+from app.common.tools import *
 
 class OptimizationJob:
 
@@ -34,6 +36,7 @@ class OptimizationJob:
 		rabbit_connection_params = RabbitConnectionParams.new()
 		self.rabbitmq_client = MasterRabbitMQClient(rabbit_connection_params, self.loop)
 		self.rabbitmq_monitor = RabbitMQMonitor(rabbit_connection_params)
+		self.autoencoder_finished = False
 
 	def start_optimization(self, trials: int):
 		self.start_time = time.time()
@@ -41,18 +44,22 @@ class OptimizationJob:
 		connection = self.loop.run_until_complete(self._run_optimization_loop(trials))
 		try:
 			self.loop.run_forever()
+			if self.search_space.get_search_space().get_type() == SearchSpaceType.IMAGE_TIME_SERIES:
+				self.autoencoder_finished = True
+				self.temporal = tempfile.mkdtemp()
+				try:
+					self.loop.run_until_complete(self.perform_image_time_series_training(self.model.build_model_CPU(self.dataset.get_input_shape(), self.dataset.get_classes_count())))
+					encoder = None
+					decoder = None
+					self.loop.run_forever()
+				except:
+					SocketCommunication.decide_print_form(MSGType.FINISHED_TRAINING, {'node': 1, 'msg': 'Something went wrong trying to perform multiple trainings'})
+					raise
+				finally:
+					shutil.rmtree(self.temporal)
 		finally:
 			self.loop.run_until_complete(connection.close())
 		#Inicializar el proceso de pronostico para generación de multiples imágenes a futuro
-		if self.model_architecture_factory.get_type() == SearchSpaceType.IMAGE_TIME_SERIES:
-			self.temporal = tempfile.mkdtemp()
-			try:
-				self.perform_image_time_series_training(self.model, self.best_model)
-			except:
-				SocketCommunication.decide_print_form(MSGType.FINISHED_TRAINING, {'node': 1, 'msg': 'Something went wrong trying to perform multiple trainings'})
-				raise
-			finally:
-				shutil.rmtree(self.temporal)
 
 	async def _run_optimization_startup(self):
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': '*** Running optimization startup ***'})
@@ -61,6 +68,12 @@ class OptimizationJob:
 		self.consumers = queue_status.consumer_count
 		for i in range (0, queue_status.consumer_count + 1):
 			await self.generate_model()
+	
+	async def _run_image_time_series_startup(self):
+		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': '*** Running Image time series startup ***'})
+		await self.rabbitmq_client.prepare_queues()
+		queue_status: QueueStatus = await self.rabbitmq_monitor.get_queue_status()
+		self.consumers = queue_status.consumer_count
 
 	async def _run_optimization_loop(self, trials: int) -> aio_pika.Connection:
 		connection = await self.rabbitmq_client.listen_for_model_results(self.on_model_results)
@@ -71,11 +84,20 @@ class OptimizationJob:
 		return connection
 
 	async def on_image_time_series_results(self, response:dict):
+		print("A worker has finished")
 		self.process_count +=1
+		print(self.process_count, " consumers:", self.consumers)
 		if self.process_count == self.consumers:
-			self.loop.stop()
+			self.stop = False
 
 	async def on_model_results(self, response: dict):
+		if self.search_space.get_search_space().get_type() == SearchSpaceType.IMAGE_TIME_SERIES and self.autoencoder_finished:
+			print("A worker has finished")
+			self.process_count +=1
+			print(self.process_count, " consumers:", self.consumers)
+			if self.process_count == self.consumers:
+				await self.perform_last_image_time_series_steps()
+			return
 		model_training_response = ModelTrainingResponse.from_dict(response)
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Received response'})
 		cad = str(model_training_response.id) + ' | ' + str(model_training_response.performance) + ' | ' + str(model_training_response.finished_epochs)
@@ -103,52 +125,78 @@ class OptimizationJob:
 			self.model.is_model_valid()
 			self.loop.stop()
 
-	def perform_image_time_series_training(self, model, model_info):
-		init_train_time = datetime.datetime.now()
-		encoder, decoder, decoder_input = self.get_encoder_decoder(model)
-		train_matrix, val_matrix, test_matrix = self.transform_info(encoder, decoder_input)
-		self.save_info_in_disk(model, encoder, decoder, train_matrix, val_matrix, test_matrix)
-		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data, quantity:'+str(len(train_matrix))})
-		mid = int(len(train_matrix)/self.consumers)
-		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data per consumer, quantity:'+str(mid)})
-		mid2 = int(len(val_matrix)/self.consumers)
-		mid3 = int(len(test_matrix)/self.consumers)
-		jsons = self.create_dictionaries(mid, mid2, mid3, len(train_matrix))
-		for j in jsons:
-			self._send_part_info_to_broker(j)
-		self.loop.run_until_complete(self._run_optimization_startup())
-		connection = self.loop.run_until_complete(self._run_optimization_image_time_series_loop())
-		self.process_count = 0
+	async def perform_image_time_series_training(self, model):
+		self.init_train_time = datetime.datetime.now()
+		print(model)
 		try:
-			self.loop.run_forever()
-		finally:
-			self.loop.run_until_complete(connection.close())
-		#self.stop = True
-		#self.process_count = 0
-		#while self.stop:
-		#	pass
+			strategy = tf.distribute.OneDeviceStrategy(device='/cpu:0')
+			with strategy.scope():
+				encoder, decoder, self.decoder_input = self.get_encoder_decoder(model)
+				print(encoder.summary())
+				print(decoder.summary())
+				train_matrix, val_matrix, self.test_matrix = self.transform_info(encoder, self.decoder_input)
+				self.save_info_in_disk(model, encoder, decoder, train_matrix, val_matrix, self.test_matrix)
+				SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data, quantity:'+str(len(train_matrix))})
+				mid = int(len(train_matrix)/self.consumers)
+				SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Processing data per consumer, quantity:'+str(mid)})
+				mid2 = int(len(val_matrix)/self.consumers)
+				mid3 = int(len(self.test_matrix)/self.consumers)
+				jsons = self.create_dictionaries(mid, mid2, mid3, len(train_matrix))
+				#await self._run_optimization_image_time_series_loop()
+				self.process_count = 0
+				for j in jsons:
+					await self._send_part_info_to_broker(j)
+				#tf.keras.backend.clear_session()
+		except ValueError as e:
+			raise
+		#self.loop.run_until_complete(self._run_optimization_startup())
+		#try:
+		#	self.loop.run_forever()
+		#except:
+		#	print("Trono la espera")
+		#	raise
+
+	async def perform_last_image_time_series_steps(self):
 		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Training finished for model'})
 		SocketCommunication().decide_print_form(MSGType.FINISHED_TRAINING, {'node':1, 'msg': 'Predicting next elements.'})
-		predictions = self.predict_next_elements(self.temporal, test_matrix)
+		predictions = self.predict_next_elements(self.temporal, self.test_matrix)
 		decoder = tf.keras.models.load_model(self.temporal+'/decoder.h5')
+		print(decoder.summary())
 		predictions = np.array(predictions)
-		predictions = predictions.reshape((SP.PREDICTION_SIZE, decoder_input[0], decoder_input[1], decoder_input[2]))
+		predictions = predictions.reshape((SP.PREDICTION_SIZE, self.decoder_input[0], self.decoder_input[1], self.decoder_input[2]))
+		print("Prediction shape:", predictions.shape)
 		pred = decoder.predict(predictions)
+		print(pred[0][400])
 		pred = pred * 255
+		pred = pred.astype('uint8')
+		mat.image.imsave('aux/NoMono.png', pred[0].reshape(480, 640), cmap='Greys')
+		if SP.DATASET_COLOR_SCALE == 3:
+			print(pred[0][400])
+			predM = to_monochromatic(pred)
+			mat.image.imsave('aux/Mono.png', predM[0].reshape(480, 640), cmap='Greys')
+			im = Image.fromarray(predM[0])
+			im.save("aux/MonoPIL.png")
+			plt.imshow(predM[0])
+			plt.savefig("aux/MonoSavefig.png")
+			print(predM[0][400])
+		print("Model prediction shape:",pred.shape)
 		finish_train_time = datetime.datetime.now()
-		train_time = finish_train_time - init_train_time
-		model_info_json = json.dumps(asdict(model_info))
-		folder_results = SP.IMAGES_TIME_SERIES_RES_FOLDER+'/train'+init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+str(model_info_json.performance_2)
+		train_time = finish_train_time - self.init_train_time
+		#model_info_json = json.dumps(asdict(self.best_model))
+		model_info_json = self.best_model
+		folder_results = SP.IMAGES_TIME_SERIES_RES_FOLDER+'/train'+self.init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(self.decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+str(model_info_json.performance_2)
 		try:
 			os.mkdir(folder_results)
 		except OSError():
 			print("Creation of the directory ResDrought/%s failed" %folder_results)
 			print("Saving in the root directory")
-			folder_results = "train"+init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+str(model_info_json.performance_2)
+			folder_results = "train"+self.init_train_time.strftime("%Y%m%d-%H%M%S")+'_'+str(self.decoder_input)+'_'+self.strfdelta(train_time,"{d}d-{h}h-{m}m-{s}s")+'_'+str(model_info_json.performance_2)
 			os.mkdir(folder_results)
 		else:
 			print("Successfully created the directory %s" %folder_results)
-		self.save_imgs(pred, folder_results, SP.DATASET_SHAPE[0], SP.DATASET_SHAPE[1], SP.DATASET_SHAPE[3], begin = 0)
+		self.save_imgs(pred, folder_results, SP.DATASET_SHAPE[0], SP.DATASET_SHAPE[1], SP.DATASET_SHAPE[2], begin = 0)
+		self.save_imgs(predM, folder_results, SP.DATASET_SHAPE[0], SP.DATASET_SHAPE[1], SP.DATASET_SHAPE[2], begin = 0, start_name=11)
+		#self.finish = False
 
 	def strfdelta(self, tdelta, fmt):
 		d = {"d": tdelta.days}
@@ -157,18 +205,21 @@ class OptimizationJob:
 		return fmt.format(**d)
 
 	def get_encoder_decoder(self, model):
-		encoder = self.dataset.get_input_shape()
-		cant = int(len(model.layers)/2)-1
+		input_shape = tf.keras.layers.Input(self.dataset.get_input_shape())
+		encoder = input_shape
+		cant = int(len(model.layers)/2)
 		for i in range(cant):
-			encoder = model.layers[i+1](encoder)
-		encoder = tf.keras.Model(self.dataset.get_input_shape(), encoder)
+			print(encoder)
+			encoder = model.layers[i](encoder)
+		encoder = tf.keras.Model(input_shape, encoder)
 		cant = int(len(model.layers)/2)
 		in_shape = tf.keras.layers.Input(shape=self.get_model_shape(model, cant))
 		decoder = in_shape
 		for i in reversed(range(cant)):
+			print(decoder)
 			decoder = model.layers[-(i+1)](decoder)
 		decoder = tf.keras.Model(in_shape, decoder)
-		return encoder, decoder, in_shape
+		return encoder, decoder, self.get_model_shape(model, cant)
 
 	def get_model_shape(self, model, layer_i=-1):
 		layer = model.layers[layer_i]
@@ -176,10 +227,13 @@ class OptimizationJob:
 		return layer_shape
 
 	def transform_info(self, encoder, decoder_input):
-		train_encoded_imgs = encoder.predict(self.datset.get_train_data())
+		train_encoded_imgs = encoder.predict(self.dataset.get_train_data())
 		validation_encoded_imgs = encoder.predict(self.dataset.get_validation_data())
 		test_encoded_imgs = encoder.predict(self.dataset.get_test_data())
+		print("decoder input:", decoder_input)
+		print("train encoded shape:", train_encoded_imgs.shape)
 		tam_imgs = decoder_input[0] * decoder_input[1] * decoder_input[2]
+		print("tam imgs:", tam_imgs)
 		train_matrix = self.create_matrix(train_encoded_imgs, tam_imgs)
 		validation_matrix = self.create_matrix(validation_encoded_imgs, tam_imgs)
 		test_matrix = self.create_matrix(test_encoded_imgs, tam_imgs)
@@ -250,16 +304,17 @@ class OptimizationJob:
 			tf.keras.backend.clear_session()
 		return predictions
 
-	def save_imgs(self, data, folder, rows, cols, channels=1, color_map='Greys', begin=-10, end=-1):
+	def save_imgs(self, data, folder, rows, cols, channels=1, color_map='Greys', begin=-10, end=-1, start_name=0):
 		if end == -1:
 			save = data[begin:]
 		else:
 			save = data[begin:end]
+		print(save.shape)
 		for i in range(len(save)):
 			if channels == 1:
-				mat.image.imsave(folder+'/'+str(i)+'.png', save[i].reshape(rows, cols), cmap=color_map)
+				mat.image.imsave(folder+'/'+str(i+start_name)+'.png', save[i].reshape(rows, cols), cmap=color_map)
 			else:
-				mat.image.imsave(folder+'/'+str(i)+'.png', save[i].reshape(rows, cols, channels), cmap=color_map)
+				mat.image.imsave(folder+'/'+str(i+start_name)+'.png', save[i].reshape(rows, cols, channels), cmap=color_map)
 		
 	async def generate_model(self):
 		SocketCommunication.decide_print_form(MSGType.MASTER_STATUS, {'node': 1, 'msg': 'Generating new model'})

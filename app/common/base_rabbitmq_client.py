@@ -40,7 +40,6 @@ class BaseRabbitMQClient:
 	async def publish(self, queue_name: str, message_body: dict, auto_close_connection=True)->aio_pika.Connection:
 		connection = await self._create_connection()
 		message_body_json = json.dumps(message_body).encode()
-
 		if auto_close_connection:
 			async with connection:
 				await self._run_publish(connection, queue_name, message_body_json)

@@ -7,10 +7,13 @@ import pandas as pd
 import os
 import glob
 #from PIL import Image
-#import cv2
+import cv2
+import matplotlib as mat
+import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from keras.preprocessing.image import ImageDataGenerator
 from app.common.preprocessing import *
+from matplotlib import pyplot
 
 #Abstract class
 class Dataset (abc.ABC):
@@ -79,7 +82,7 @@ class ImageClassificationBenchmarkDataset(Dataset):
 			print('Somethings went wrong trying to load the Image dataset, please check the parameters and info')
 			raise
 
-	def get_train_data(self, use_augmentation: False):
+	def get_train_data(self, use_augmentation = False):
 		train_data = None
 		if use_augmentation:
 			train_data = self.train.map(self._scale).cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
@@ -95,7 +98,7 @@ class ImageClassificationBenchmarkDataset(Dataset):
 		test_data = self.test.map(self._scale).cache().batch(self.batch_size)
 		return test_data
 
-	def get_training_steps(self, use_augmentation: False) -> int:
+	def get_training_steps(self, use_augmentation = False) -> int:
 		if use_augmentation:
 			return int(np.ceil(self.train_split_count/self.batch_size)) * 2
 		else:
@@ -187,7 +190,7 @@ class RegressionBenchmarkDataset(Dataset):
 		dataset = tf.data.Dataset.from_tensor_slices((samples, labels))
 		return dataset
 
-	def get_train_data(self, use_augmentation: False):
+	def get_train_data(self, use_augmentation = False):
 		#train_data = self.train_original.shuffle(self.shuffle_cache).cache().batch(self.batch_size).repeat()
 		train_data = self.train_original.cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
 		return train_data
@@ -200,7 +203,7 @@ class RegressionBenchmarkDataset(Dataset):
 		test_data = self.test.cache().batch(self.batch_size)
 		return test_data
 
-	def get_training_steps(self, use_augmentation: False) -> int:
+	def get_training_steps(self, use_augmentation = False) -> int:
 		return int(np.ceil(self.train_split_count/self.batch_size))
 
 	def get_validation_steps(self) -> int:
@@ -295,7 +298,7 @@ class TimeSeriesBenchmarkDataset(Dataset):
 		dataset = tf.data.Dataset.from_tensor_slices((samples, labels))
 		return dataset
 
-	def get_train_data(self, use_augmentation: False):
+	def get_train_data(self, use_augmentation = False):
 		train_data = self.train_original.cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
 		return train_data
 
@@ -307,7 +310,7 @@ class TimeSeriesBenchmarkDataset(Dataset):
 		test_data = self.test.cache().batch(self.batch_size)
 		return test_data
 
-	def get_training_steps(self, use_augmentation: False) -> int:
+	def get_training_steps(self, use_augmentation = False) -> int:
 		return int(np.ceil(self.train_split_count / self.batch_size))
 
 	def get_validation_steps(self) -> int:
@@ -367,9 +370,19 @@ class ImageTimeSeriesBenchmarkDataset(Dataset):
 				with open(route+'info.json') as jsonfile:
 					info = json.load(jsonfile)
 				#get all images from folders train and test
-				datagen_train = ImageDataGenerator(rescale=1./255, data_format='channels_last')
-				datagen_validation = ImageDataGenerator(rescale=1./255, data_format='channels_last')
-				datagen_test = ImageDataGenerator(rescale=1./255, data_format='channels_last')
+				if self.color_mode == 3:
+					datagen_train = ImageDataGenerator(rescale=1./255, data_format='channels_last', preprocessing_function=self.mono_func)
+					datagen_validation = ImageDataGenerator(rescale=1./255, data_format='channels_last', preprocessing_function=self.mono_func)
+					datagen_test = ImageDataGenerator(rescale=1./255, data_format='channels_last', preprocessing_function=self.mono_func)
+					#it = datagen_train.flow_from_directory(route+'/Train/', batch_size=1, target_size=(self.shape[0], self.shape[1]), color_mode='grayscale', class_mode='input')
+					#batch = it.next()
+					#print(batch[0].shape)
+					#print(batch[0][0][400][200:300])
+					#mat.image.imsave('aux/muestraGenerator.png', batch[0][0].reshape(480, 640), cmap='Greys')
+				else:
+					datagen_train = ImageDataGenerator(rescale=1./255, data_format='channels_last')
+					datagen_validation = ImageDataGenerator(rescale=1./255, data_format='channels_last')
+					datagen_test = ImageDataGenerator(rescale=1./255, data_format='channels_last')
 				if self.color_mode == 1:
 					color = 'rgb'
 				else:
@@ -387,7 +400,15 @@ class ImageTimeSeriesBenchmarkDataset(Dataset):
 				print('Somethings went wrong trying to load the Image dataset, please check the parameters and info')
 				raise
 
-	def get_train_data(self, use_augmentation: False):
+	def mono_func(self, image):
+		x_mono = []
+		for i in image:
+			(thresh, monoImg) = cv2.threshold(i, 15, 255, cv2.THRESH_BINARY)
+			x_mono.append(monoImg)
+		x_mono = np.array(x_mono)
+		return x_mono
+
+	def get_train_data(self, use_augmentation = False):
 		#train_data = None
 		#if use_augmentation:
 		#	train_data = self.train.map(self._scale).cache().shuffle(self.shuffle_cache).batch(self.batch_size).repeat()
@@ -403,7 +424,7 @@ class ImageTimeSeriesBenchmarkDataset(Dataset):
 		#test_data = self.test.map(self._scale).cache().batch(self.batch_size)
 		return self.test
 
-	def get_training_steps(self, use_augmentation: False) -> int:
+	def get_training_steps(self, use_augmentation = False) -> int:
 		if use_augmentation:
 			return int(np.ceil(self.train_split_count/self.batch_size)) * 2
 		else:
