@@ -64,7 +64,8 @@ class TrainingSlave:
 		dataset.load(info_dict['init_route'])
 		model = Model(model_training_request, dataset)
 		if SP.TRAIN_GPU:
-			return model.build_and_train(info_dict['model_img'])
+			#return model.build_and_train(info_dict['model_img'])
+			return model.build_and_train()
 		else:
 			return model.build_and_train_cpu(info_dict['model_img'])
 

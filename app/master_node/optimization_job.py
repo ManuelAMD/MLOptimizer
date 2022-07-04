@@ -66,7 +66,8 @@ class OptimizationJob:
 		await self.rabbitmq_client.prepare_queues()
 		queue_status: QueueStatus = await self.rabbitmq_monitor.get_queue_status()
 		self.consumers = queue_status.consumer_count
-		for i in range (0, queue_status.consumer_count + 1):
+		print("Este es el numero de consumidores",range(self.consumers))
+		for i in range (0, queue_status.consumer_count + 1 ): #aqui va un mas 1
 			await self.generate_model()
 	
 	async def _run_image_time_series_startup(self):
@@ -115,7 +116,7 @@ class OptimizationJob:
 		elif action == Action.START_NEW_PHASE:
 			queue_status: QueueStatus = await self.rabbitmq_monitor.get_queue_status()
 			SocketCommunication.decide_print_form(MSGType.CHANGE_PHASE, {'node': 1, 'msg': 'New phase, deep training'})
-			for i in range(0, queue_status.consumer_count + 1):
+			for i in range(0, queue_status.consumer_count + 1 ):#aui va un + 1
 				await self.generate_model()
 		elif action == Action.FINISH:
 			SocketCommunication.decide_print_form(MSGType.FINISHED_TRAINING, {'node': 1, 'msg': 'Finished training'})

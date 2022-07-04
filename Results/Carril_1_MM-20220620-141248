@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 323, "training_type": 2, "experiment_id": "Carril_1_MM-20220620-141248", "architecture": {"base_architecture": "mlp", "classifier_layers_n": 2, "classifier_dropouts": [0, 0.1], "classifier_layers_units": [32, 256], "learning_rate": 0.0}, "epochs": 200, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "regression", "search_space_hash": 2156179262504553724, "dataset_tag": "Carril_1_MM"}, "performance": 0.004461925942450762, "performance_2": 0.0044654011726379395}
+[[7.89e-16, 29.16222222], [0.0, 2.175555556], [0.0, 8.386666667]]
+Optimization took: 00:23:05 (hh:mm:ss) 1385.3060994148254 (Seconds) 

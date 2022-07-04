@@ -1,0 +1,18 @@
+{
+	"name":"Clima_Culiacan",
+	"version":1.0,
+	"description":"Clima_Culiacan Max y Min",
+	"homepage":"",
+	"features":{
+		"date":1,
+		"value":2
+	},
+	"total_num_examples":14965,
+	"splits":{
+		"test":2993,
+		"train":11972
+	},
+	"supervised_keys":["date", "value"],
+	"citation":"",
+	"redistribution_info":""
+}

@@ -1,0 +1,18 @@
+{
+	"name":"Carril_1",
+	"version":1.0,
+	"description":"IRI prediction dataset",
+	"homepage":"UMDSH",
+	"features":{
+		"value":2,
+		"label":1
+	},
+	"total_num_examples":7198,
+	"splits":{
+		"test":398,
+		"train":6800
+	},
+	"supervised_keys":["value", "label"],
+	"citation":"",
+	"redistribution_info":""
+}

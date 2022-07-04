@@ -29,30 +29,30 @@ class SystemParameters:
     #Dataset parameters
     #Tensorflow datasets = mnist, fashion_mnist, cifar10, cifar100, horses_or_humans, emnist
     #DATASET_NAME: str = 'mnist'
-    DATASET_NAME: str = 'DroughtMonitor'
+    DATASET_NAME: str = 'Acuicola'
     IMAGES_TIME_SERIES_RES_FOLDER: str = 'ResDrought'
     #Types: image = 1, regression = 2, time-series = 3, image-time-series = 4.
-    DATASET_TYPE: int = 4
-    DATASET_BATCH_SIZE: int = 8
+    DATASET_TYPE: int = 3
+    DATASET_BATCH_SIZE: int = 128
     DATASET_VALIDATION_SPLIT: float = 0.2
     #empty for tensorflowDatasets
     #DATASET_INFO_ROUTE: str = '' 
     #DATASET_SHAPE: tuple = (28,28,1)
-    #DATASET_SHAPE: tuple = (1,3)
-    #DATASET_SHAPE: tuple = (8)
+    DATASET_SHAPE: tuple = (1,2)
+    #DATASET_SHAPE: tuple = (2)
     #Image dataset parameters
     DATASET_CLASSES: int = 10
     #Image color set: No modification = 1, grayscale = 2, monocromathic = 3 (the shape must be the original, internally the system will take care of the dataset)
     #DATASET_COLOR_SCALE: int = 1
     #Regression dataset parameters
-    DATASET_FEATURES: int = 8
+    DATASET_FEATURES: int = 2
     DATASET_LABELS: int = 1
     #Time Series dataset parameters
     DATASET_WINDOW_SIZE: int = 100
-    DATASET_DATA_SIZE: int = 3
+    DATASET_DATA_SIZE: int = 2
     #Image time series dataset parameters
     DATASET_COLOR_SCALE: int = 3
-    DATASET_SHAPE: tuple = (480,640,1)
+    #DATASET_SHAPE: tuple = (28,28,1)
     IMAGES_TIME_SERIES_EPOCHS: int = 150
     IMAGES_TIME_SERIES_BATCH_SIZE: int = 64
     IMAGES_TIME_SERIES_EARLY: int = 15
@@ -63,24 +63,24 @@ class SystemParameters:
     TRAIN_GPU: bool = True
     TRIALS = 10
     #Exploration parameters 
-    EXPLORATION_SIZE: int = 100
-    EXPLORATION_EPOCHS: int = 15
-    EXPLORATION_EARLY_STOPPING_PATIENCE: int = 3
+    EXPLORATION_SIZE: int = 500
+    EXPLORATION_EPOCHS: int = 20
+    EXPLORATION_EARLY_STOPPING_PATIENCE: int = 5
     #Hall of fame parameters
-    HALL_OF_FAME_SIZE: int = 3
-    HALL_OF_FAME_EPOCHS: int = 300
+    HALL_OF_FAME_SIZE: int = 10
+    HALL_OF_FAME_EPOCHS: int = 200
     HOF_EARLY_STOPPING_PATIENCE: int = 15
 
 
     #Model parameters
     DTYPE: str = 'float32'
     OPTIMIZER: str = 'adam'
-    LAYERS_ACTIVATION_FUNCTION: str = 'relu'
-    OUTPUT_ACTIVATION_FUNCTION: str = 'sigmoid'
-    KERNEL_INITIALIZER: str = 'normal'
-    LOSS_FUNCTION: str = 'binary_crossentropy'
-    PADDING: str = 'same'
-    PREDICTION_SIZE: int = 10
+    #LAYERS_ACTIVATION_FUNCTION: str = 'relu'
+    #OUTPUT_ACTIVATION_FUNCTION: str = 'sigmoid'
+    #KERNEL_INITIALIZER: str = 'normal'
+    #LOSS_FUNCTION: str = 'binary_crossentropy'
+    #PADDING: str = 'same'
+    #PREDICTION_SIZE: int = 10
 
     #Image Classification
     #LOSS_FUNCTION: str = 'sparse_categorical_crossentropy'
@@ -89,7 +89,7 @@ class SystemParameters:
     #OUTPUT_ACTIVATION_FUNCTION: str = 'softmax'
     #PADDING: str = 'same'
     #KERNEL_INITIALIZER: str = 'he_uniform'
-    #WEIGHT_DECAY = 1e-4
+    WEIGHT_DECAY = 1e-4
 
     #Regression models
     #LOSS_FUNCTION: str = 'mse'
@@ -98,8 +98,8 @@ class SystemParameters:
     #KERNEL_INITIALIZER: str = 'normal'
 
     #Time-series models
-    #LOSS_FUNCTION: str = 'mse'
-    #LSTM_ACTIVATION_FUNCTION: str = 'tanh'
-    #LAYERS_ACTIVATION_FUNCTION: str = 'tanh'
-    #OUTPUT_ACTIVATION_FUNCTION: str = 'tanh'
-    #KERNEL_INITIALIZER: str = 'normal'
+    LOSS_FUNCTION: str = 'mse'
+    LSTM_ACTIVATION_FUNCTION: str = 'tanh'
+    LAYERS_ACTIVATION_FUNCTION: str = 'tanh'
+    OUTPUT_ACTIVATION_FUNCTION: str = 'tanh'
+    KERNEL_INITIALIZER: str = 'normal'

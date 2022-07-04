@@ -1,0 +1,18 @@
+{
+	"name":"Acuicola",
+	"version":1.0,
+	"description":"Datos Acuicolas de temperatura y oxigno simulados con una función seno",
+	"homepage":"",
+	"features":{
+		"date":3,
+		"value":4
+	},
+	"total_num_examples":4417,
+	"splits":{
+		"test":417,
+		"train":4000
+	},
+	"supervised_keys":["date", "value"],
+	"citation":"",
+	"redistribution_info":""
+}

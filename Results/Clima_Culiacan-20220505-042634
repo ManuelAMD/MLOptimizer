@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 9, "training_type": 3, "experiment_id": "Clima_Culiacan-20220505-042634", "architecture": {"base_architecture": "lstm", "lstm_layers_n": 2, "lstm_layers_units": [48, 48], "classifier_layer": "mlp", "classifier_layers_n": 2, "classifier_dropouts": [0.5, 0], "classifier_layers_units": [32, 96], "learning_rate": 0.0}, "epochs": 100, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "time_series", "search_space_hash": -2401909015397029325, "dataset_tag": "Clima_Culiacan"}, "performance": 0.006359385326504707, "performance_2": 0.0055098747834563255}
+[[15.98, 42.47], [-0.68, 29.02]]
+Optimization took: 02:20:22 (hh:mm:ss) 8422.94660782814 (Seconds) 

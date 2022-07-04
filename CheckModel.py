@@ -24,6 +24,6 @@ def reproduce_Architecture(f):
     m.build_model((1,3),3)
     return None
 
-filename = 'Architecture Results/corrales_07_zo02-20210628-225840'
+filename = 'Architecture Results/BTC pronostico-20220428-135042'
 f = open(filename)
 reproduce_Architecture(f)

@@ -1,0 +1,18 @@
+{
+	"name":"data_Acuicola",
+	"version":1.0,
+	"description":"Data acuicola creada a mano, no la real",
+	"homepage":"",
+	"features":{
+		"date":1,
+		"value":2
+	},
+	"total_num_examples":1104,
+	"splits":{
+		"test":204,
+		"train":900
+	},
+	"supervised_keys":["date", "value"],
+	"citation":"",
+	"redistribution_info":""
+}

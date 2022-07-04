@@ -14,12 +14,12 @@ from app.common.dataset import Dataset
 from app.common.model_communication import *
 from system_parameters import SystemParameters as SP
 from app.common.Callbacks import EndEpoch
-#gpu_devices = tf.config.experimental.list_physical_devices("GPU")
-#print(gpu_devices)
-#for device in gpu_devices:
-#	tf.config.experimental.set_memory_growth(device, True)
-#physical_devices = tf.config.list_physical_devices('GPU')
-#tf.config.experimental.set_memory_growth(physical_devices[0], True)
+gpu_devices = tf.config.experimental.list_physical_devices("GPU")
+print(gpu_devices)
+for device in gpu_devices:
+	tf.config.experimental.set_memory_growth(device, True)
+physical_devices = tf.config.list_physical_devices('GPU')
+tf.config.experimental.set_memory_growth(physical_devices[0], True)
 
 class Model:
 	def __init__(self, model_training_request: ModelTrainingRequest, dataset: Dataset, socket = None):
@@ -73,6 +73,15 @@ class Model:
 			strategy = tf.distribute.OneDeviceStrategy(device='/cpu:0')
 			with strategy.scope():
 				self.build_and_train(save_path)
+		except ValueError as e:
+			logging.warning(e)
+
+	def build_and_dual_gpu(self):
+		SocketCommunication.decide_print_form(MSGType.SLAVE_STATUS, {'node': 2, 'msg': "Training with CPU"})
+		try:
+			strategy = tf.distribute.MirroredStrategy(devices=["GPU:0", "GPU:1"])
+			with strategy.scope():
+				self.build_and_train()
 		except ValueError as e:
 			logging.warning(e)
 

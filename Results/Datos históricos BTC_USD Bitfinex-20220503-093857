@@ -1,0 +1,3 @@
+{"model_training_request": {"id": 79, "training_type": 3, "experiment_id": "Datos hist\u00f3ricos BTC_USD Bitfinex-20220503-093857", "architecture": {"base_architecture": "mlp", "lstm_layers_n": 0, "lstm_layers_units": [], "classifier_layer": "mlp", "classifier_layers_n": 1, "classifier_dropouts": [0], "classifier_layers_units": [64], "learning_rate": 0.0}, "epochs": 100, "early_stopping_patience": 15, "is_partial_training": false, "search_space_type": "time_series", "search_space_hash": -2401909015397029325, "dataset_tag": "Datos hist\u00f3ricos BTC_USD Bitfinex"}, "performance": 0.020934119820594788, "performance_2": 0.009859851561486721}
+[[183, 67526]]
+Optimization took: 00:03:35 (hh:mm:ss) 215.37868809700012 (Seconds) 
