@@ -145,13 +145,22 @@ class RegressionModelSearchSpace(SearchSpace):
 
 @dataclass(frozen=True)
 class TimeSeriesModelSearchSpace(SearchSpace):
-    BASE_ARCHITECTURE: tuple = field(default=('lstm', 'mlp'), hash=False)
+    BASE_ARCHITECTURE: tuple = field(default=('lstm', 'gru', 'mlp'), hash=False)
     #LSTM architecture
     LSTM_LAYERS_N_MIN: int = 1
     LSTM_LAYERS_N_MAX: int = 6
     LSTM_LAYERS_BASE_MULTIPLIER: int = 16
     LSTM_LAYERS_UNITS_MIN: int = 1
     LSTM_LAYERS_UNITS_MAX: int = 32
+    LSTM_DROPOUT_VALUES = (0, 0.1, 0.2, 0.3, 0.5)
+
+    #GRU architecture
+    GRU_LAYERS_N_MIN: int = 1
+    GRU_LAYERS_N_MAX: int = 6
+    GRU_LAYERS_BASE_MULTIPLIER: int = 16
+    GRU_LAYERS_UNITS_MIN: int = 1
+    GRU_LAYERS_UNITS_MAX: int = 32
+    GRU_DROPOUT_VALUES = (0, 0.1, 0.2, 0.3, 0.5)
 
     #MLP based model search space
     CLASSIFIER_LAYER: tuple = field(default=('mlp','gap'), hash=False)
@@ -295,6 +304,11 @@ class TimeSeriesModelArchitectureParameters(ModelArchitectureParameters):
     # Lstm layers
     lstm_layers_n: int
     lstm_layers_units: List[int]
+    lstm_dropouts: List[int]
+    # gru layers
+    gru_layers_n: int
+    gru_layers_units: List[int]
+    gru_dropouts: List[int]
     # Classifier layers
     classifier_layer: str
     classifier_layers_n: int
@@ -308,6 +322,10 @@ class TimeSeriesModelArchitectureParameters(ModelArchitectureParameters):
             base_architecture=None,
             lstm_layers_n=0,
             lstm_layers_units=list(),
+            lstm_dropouts=list(),
+            gru_layers_n=0,
+            gru_layers_units=list(),
+            gru_dropouts=list(),
             classifier_layer=None,
             classifier_layers_n=0,
             classifier_dropouts=list(),
@@ -568,7 +586,8 @@ class TimeSeriesModelArchitectureFactory(ModelArchitectureFactory):
         model_params.base_architecture = recommender.suggest_categorical("BASE_ARCHITECTURE", self.sp.BASE_ARCHITECTURE)
         if model_params.base_architecture == "lstm":
             model_params = self._generate_lstm_layers(recommender, model_params)
-
+        elif model_params.base_architecture == 'gru':
+            model_params = self._generate_gru_layers(recommender, model_params)
         model_params.classifier_layer = recommender.suggest_categorical("CLASSIFIER_LAYER", self.sp.CLASSIFIER_LAYER)
 
         if model_params.base_architecture == 'mlp' or model_params.classifier_layer == 'mlp':
@@ -585,6 +604,25 @@ class TimeSeriesModelArchitectureFactory(ModelArchitectureFactory):
             units = round(recommender.suggest_loguniform(tag, self.sp.LSTM_LAYERS_UNITS_MIN, self.sp.LSTM_LAYERS_UNITS_MAX))
             units = units * self.sp.LSTM_LAYERS_BASE_MULTIPLIER
             model_params.lstm_layers_units.append(units)
+            
+            tag = "LSTM_DROPOUTS_" + str(n)
+            dropout = recommender.suggest_categorical(tag, self.sp.LSTM_DROPOUT_VALUES)
+            model_params.lstm_dropouts.append(dropout)
+
+        return model_params
+
+    def _generate_gru_layers(self, recommender:optuna.Trial, model_params: TimeSeriesModelArchitectureParameters) -> TimeSeriesModelArchitectureParameters:
+        model_params.gru_layers_n = recommender.suggest_int("GRU_LAYERS_N", self.sp.GRU_LAYERS_N_MIN, self.sp.GRU_LAYERS_N_MAX)
+
+        for n in range(0, model_params.gru_layers_n):
+            tag = "GRU_LAYERS_UNITS_" + str(n)
+            units = round(recommender.suggest_loguniform(tag, self.sp.GRU_LAYERS_UNITS_MIN, self.sp.GRU_LAYERS_UNITS_MAX))
+            units = units * self.sp.GRU_LAYERS_BASE_MULTIPLIER
+            model_params.gru_layers_units.append(units)
+            
+            tag = "GRU_DROPOUTS_" + str(n)
+            dropout = recommender.suggest_categorical(tag, self.sp.GRU_DROPOUT_VALUES)
+            model_params.gru_dropouts.append(dropout)
 
         return model_params
 

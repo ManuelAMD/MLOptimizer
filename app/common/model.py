@@ -244,8 +244,24 @@ class Model:
 		for n in range(model_parameters.lstm_layers_n-1):
 			units = model_parameters.lstm_layers_units[n]
 			model.add(keras.layers.LSTM(units, return_sequences=True, activation=activation))
+			dropout = model_parameters.lstm_dropouts[n]
+			model.add(keras.layers.Dropout(dropout))
 		units = model_parameters.lstm_layers_units[model_parameters.lstm_layers_n-1]
 		model.add(keras.layers.LSTM(units, activation=activation))
+		dropout = model_parameters.lstm_dropouts[model_parameters.lstm_layers_n-1]
+		model.add(keras.layers.Dropout(dropout))
+
+	def _add_time_series_gru_architecture(self, model: keras.Model, model_parameters: TimeSeriesModelArchitectureParameters, class_count: int, activation= 'tanh'):
+		for n in range(model_parameters.gru_layers_n-1):
+			units = model_parameters.gru_layers_units[n]
+			model.add(keras.layers.GRU(units, return_sequences= True, activation= activation))
+			dropout = model_parameters.gru_dropouts[n]
+			model.add(keras.layers.Dropout(dropout))
+		units = model_parameters.gru_layers_units[model_parameters.gru_layers_n-1]
+		model.add(keras.layers.GRU(units, activation= activation))
+		dropout = model_parameters.gru_dropouts[model_parameters.gru_layers_n-1]
+		model.add(keras.layers.Dropout(dropout))
+
 
 	def build_image_model(self, model_parameters: ImageModelArchitectureParameters, input_shape: tuple, class_count: int) -> keras.Sequential:
 		start_time = int(round(time.time() * 1000))
@@ -299,6 +315,8 @@ class Model:
 		model.add(keras.layers.Input(input_shape))
 		if model_parameters.base_architecture == 'lstm':
 			self._add_time_series_lstm_architecture(model, model_parameters, class_count, SP.LSTM_ACTIVATION_FUNCTION)
+		if model_parameters.base_architecture == 'gru':
+			self._add_time_series_gru_architecture(model, model_parameters, class_count, SP.LSTM_ACTIVATION_FUNCTION)
 		if model_parameters.base_architecture == 'mlp' or model_parameters.classifier_layer == 'mlp':
 			self._add_mlp_architecture(model, model_parameters, class_count, SP.KERNEL_INITIALIZER, SP.LAYERS_ACTIVATION_FUNCTION)
 		#All combination has the same final layers
